@@ -530,9 +530,42 @@ select {
   margin-top: 10px;
 }
 
-.compact-reading {
+.compact-reading,
+.compact-session-reading {
   display: grid;
   gap: 10px;
+}
+
+.compact-session-reading {
+  gap: 8px;
+  padding: 10px;
+}
+
+.compact-session-reading h3 {
+  margin-bottom: 0;
+}
+
+.compact-session-reading p {
+  color: #eee8dc;
+}
+
+.compact-session-reading strong {
+  color: var(--gold);
+}
+
+.session-phrase {
+  border-left: 3px solid var(--moss);
+  padding-left: 9px;
+}
+
+.verb-line {
+  color: #eaf5da;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.compact-session-reading .compact-details {
+  padding-top: 8px;
 }
 
 .reference-panel {

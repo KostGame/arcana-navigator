@@ -463,20 +463,11 @@ function renderReadingResult(reading: ReturnType<typeof composeReading>, selecti
 
 function renderSessionReading(positionTitle: string, reading: ReturnType<typeof composeReading>, orientation: Orientation) {
   return `
-    <article class="session-reading compact-reading">
+    <article class="session-reading compact-session-reading">
       <h3>${positionTitle}: ${reading.cardName} · ${orientationLabel(orientation)}</h3>
-      <div class="reading-block">
-        <h3>Суть</h3>
-        <p>${compactSense(reading)}</p>
-      </div>
-      <div class="reading-block">
-        <h3>Глаголы</h3>
-        <div class="chips">${reading.verbs.slice(0, 6).map((verb) => `<span>${verb}</span>`).join("")}</div>
-      </div>
-      <div class="reading-block phrase-block">
-        <h3>Фраза</h3>
-        <p>${firstPhrase(reading)}</p>
-      </div>
+      <p><strong>Суть:</strong> ${compactSense(reading)}</p>
+      <p class="session-phrase"><strong>Фраза:</strong> «${stripFinalPeriod(firstPhrase(reading))}»</p>
+      <p class="verb-line"><strong>Глаголы:</strong> ${reading.verbs.slice(0, 6).join(" · ")}</p>
       <details class="compact-details">
         <summary>Подробнее</summary>
         <div class="details-stack">
@@ -626,6 +617,10 @@ function compactSense(reading: ReturnType<typeof composeReading>) {
 
 function firstPhrase(reading: ReturnType<typeof composeReading>) {
   return reading.phrases[0] ?? reading.summary;
+}
+
+function stripFinalPeriod(text: string) {
+  return text.replace(/[.。]$/u, "");
 }
 
 function compactText(text: string, maxWords: number) {
