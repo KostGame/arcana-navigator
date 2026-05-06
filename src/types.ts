@@ -1,21 +1,50 @@
-export type SpreadId = "career" | "relationships" | "choice" | "day";
+export type SpreadLayoutId =
+  | "day-card"
+  | "three-advice"
+  | "past-present-future"
+  | "situation-resource"
+  | "two-options"
+  | "relationships"
+  | "inner-state"
+  | "action"
+  | "forecast"
+  | "career";
 
-export type PositionLensId =
+export type SpreadId = SpreadLayoutId;
+
+export type QuestionTypeId =
+  | "diagnosis"
+  | "relationships"
+  | "choice"
+  | "action"
+  | "forecast"
+  | "inner"
+  | "career"
+  | "day"
+  | "money"
+  | "learning"
+  | "conflict"
+  | "creativity";
+
+export type PositionRole =
   | "energy"
   | "format"
-  | "block"
+  | "obstacle"
+  | "resource"
+  | "risk"
   | "advice"
+  | "outcome"
+  | "hidden"
+  | "choice"
+  | "past"
+  | "present"
+  | "future"
+  | "influence"
   | "self"
   | "other"
   | "connection"
-  | "hidden"
-  | "pull"
-  | "resistance"
-  | "risk"
-  | "potential"
-  | "dayEnergy"
-  | "challenge"
-  | "resource";
+  | "need"
+  | "option";
 
 export type SuitId = "wands" | "cups" | "swords" | "pentacles";
 export type RankId = "ace" | "two" | "three" | "four" | "five" | "six" | "seven" | "eight" | "nine" | "ten";
@@ -49,21 +78,29 @@ export type Orientation = "upright" | "reversed";
 export interface SpreadPosition {
   id: string;
   title: string;
-  lensId: PositionLensId;
-  shows: string;
-  verbs: string[];
-  phrases: string[];
-  attention: string;
-  avoid: string;
+  description: string;
+  role: PositionRole;
+  optional?: boolean;
 }
 
-export interface Spread {
-  id: SpreadId;
+export interface SpreadLayout {
+  id: SpreadLayoutId;
   title: string;
-  exampleQuestion: string;
   description: string;
-  contextLens: string;
+  defaultQuestionTypeId: QuestionTypeId;
   positions: SpreadPosition[];
+}
+
+export interface QuestionType {
+  id: QuestionTypeId;
+  title: string;
+  description: string;
+  verbs: string[];
+  readingFocus: string[];
+  positiveCards: string;
+  tenseCards: string;
+  avoid: string[];
+  starterPhrases: string[];
 }
 
 export interface SuitMeaning {
@@ -76,7 +113,7 @@ export interface SuitMeaning {
   minus: string;
   advice: string;
   risk: string;
-  spreadHints: Record<SpreadId, string>;
+  questionHints: Record<QuestionTypeId, string>;
 }
 
 export interface RankMeaning {
@@ -117,8 +154,8 @@ export interface MajorArcana {
   advice: string;
 }
 
-export interface PositionMeaning {
-  id: PositionLensId;
+export interface PositionLens {
+  role: PositionRole;
   title: string;
   summary: string;
   suitPrompt: string;
@@ -131,13 +168,16 @@ export interface PositionMeaning {
   avoid: string;
 }
 
+export type PositionMeaning = PositionLens;
+
 export type ReadingCard =
   | { type: "minor"; suitId: SuitId; rankId: RankId }
   | { type: "court"; suitId: SuitId; courtId: CourtId }
   | { type: "major"; majorId: MajorId };
 
 export interface ReadingInput {
-  spreadId: SpreadId;
+  spreadId: SpreadLayoutId;
+  questionTypeId: QuestionTypeId;
   positionId: string;
   orientation: Orientation;
   card: ReadingCard;
@@ -146,6 +186,7 @@ export interface ReadingInput {
 export interface ReadingResult {
   cardName: string;
   spreadTitle: string;
+  questionTitle: string;
   positionTitle: string;
   summary: string;
   verbs: string[];

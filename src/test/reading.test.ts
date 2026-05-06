@@ -1,12 +1,94 @@
 import { describe, expect, it } from "vitest";
-import { positionMeanings } from "../data/positionMeanings";
-import { spreads } from "../data/spreads";
+import { positionLenses } from "../data/positionLenses";
+import { questionTypes } from "../data/questionTypes";
+import { spreadLayouts } from "../data/spreadLayouts";
 import { composeReading } from "../lib/reading";
 
 describe("composeReading", () => {
-  it("reads 10 Кубков as career energy through people, circle, and emotional return", () => {
+  it("reads Moon differently for relationships", () => {
+    const reading = composeReading({
+      spreadId: "three-advice",
+      questionTypeId: "relationships",
+      positionId: "three-influence",
+      orientation: "upright",
+      card: { type: "major", majorId: "moon" },
+    });
+
+    expect(reading.summary).toContain("скрытые чувства");
+    expect(reading.summary).toContain("страхи");
+    expect(reading.summary).toContain("неясность");
+    expect(reading.summary).toContain("фантазии");
+    expect(reading.summary).toContain("прояснения");
+  });
+
+  it("reads Moon differently for career", () => {
+    const reading = composeReading({
+      spreadId: "three-advice",
+      questionTypeId: "career",
+      positionId: "three-influence",
+      orientation: "upright",
+      card: { type: "major", majorId: "moon" },
+    });
+
+    expect(reading.summary).toContain("работу с неочевидным");
+    expect(reading.summary).toContain("диагностику");
+    expect(reading.summary).toContain("психологию");
+    expect(reading.summary).toContain("исследование");
+    expect(reading.summary).toContain("творчество");
+    expect(reading.summary).toContain("скрытые мотивы");
+  });
+
+  it("reads Moon differently for forecast", () => {
+    const reading = composeReading({
+      spreadId: "forecast",
+      questionTypeId: "forecast",
+      positionId: "forecast-near",
+      orientation: "upright",
+      card: { type: "major", majorId: "moon" },
+    });
+
+    expect(reading.summary).toContain("пока не всё видно");
+    expect(reading.summary).toContain("условия могут быть туманными");
+    expect(reading.summary).toContain("окончательный вывод");
+    expect(reading.summary).toContain("не делать слишком рано");
+  });
+
+  it("reads 10 Cups as relationship harmony and emotional fullness", () => {
+    const reading = composeReading({
+      spreadId: "relationships",
+      questionTypeId: "relationships",
+      positionId: "rel-between",
+      orientation: "upright",
+      card: { type: "minor", suitId: "cups", rankId: "ten" },
+    });
+
+    expect(reading.cardName).toBe("10 Кубков");
+    expect(reading.summary).toContain("гармонию");
+    expect(reading.summary).toContain("близость");
+    expect(reading.summary).toContain("образ семьи");
+    expect(reading.summary).toContain("эмоциональную полноту");
+  });
+
+  it("reads 10 Cups as choice risk through idealization and practical details", () => {
+    const reading = composeReading({
+      spreadId: "two-options",
+      questionTypeId: "choice",
+      positionId: "two-risk",
+      orientation: "upright",
+      card: { type: "minor", suitId: "cups", rankId: "ten" },
+    });
+
+    expect(reading.cardName).toBe("10 Кубков");
+    expect(reading.summary).toContain("идеализировать красивую картинку");
+    expect(reading.summary).toContain("ожидать идеального результата");
+    expect(reading.summary).toContain("практические детали");
+    expect(reading.avoid).toContain("не читать риск как запрет на радость");
+  });
+
+  it("reads 10 Cups as career energy through people, circle, and emotional return", () => {
     const reading = composeReading({
       spreadId: "career",
+      questionTypeId: "career",
       positionId: "career-energy",
       orientation: "upright",
       card: { type: "minor", suitId: "cups", rankId: "ten" },
@@ -16,43 +98,38 @@ describe("composeReading", () => {
     expect(reading.summary).toContain("работа с людьми");
     expect(reading.summary).toContain("ощущение своего круга");
     expect(reading.summary).toContain("эмоциональная отдача");
-    expect(reading.avoid).not.toContain("единственную профессию");
-  });
-
-  it("reads 10 Кубков as choice risk through idealization and practical blind spots", () => {
-    const reading = composeReading({
-      spreadId: "choice",
-      positionId: "choice-risk",
-      orientation: "upright",
-      card: { type: "minor", suitId: "cups", rankId: "ten" },
-    });
-
-    expect(reading.cardName).toBe("10 Кубков");
-    expect(reading.summary).toContain("идеализировать красивую картинку");
-    expect(reading.summary).toContain("практические сложности");
-    expect(reading.avoid).toContain("не читать риск как запрет на радость");
   });
 });
 
 describe("data integrity", () => {
-  const lensIds = new Set(positionMeanings.map((meaning) => meaning.id));
+  const roleIds = new Set(positionLenses.map((lens) => lens.role));
+  const questionTypeIds = new Set(questionTypes.map((type) => type.id));
 
-  it("has positions with valid lenses, phrases, and verbs for every spread", () => {
-    expect(spreads).toHaveLength(4);
+  it("has the required spread layouts with valid positions", () => {
+    expect(spreadLayouts).toHaveLength(10);
 
-    for (const spread of spreads) {
+    for (const spread of spreadLayouts) {
       expect(spread.positions.length).toBeGreaterThan(0);
-      expect(spread.contextLens.length).toBeGreaterThan(20);
+      expect(questionTypeIds.has(spread.defaultQuestionTypeId)).toBe(true);
 
       for (const position of spread.positions) {
-        expect(lensIds.has(position.lensId)).toBe(true);
+        expect(roleIds.has(position.role)).toBe(true);
         expect(position.title.length).toBeGreaterThan(0);
-        expect(position.shows.length).toBeGreaterThan(10);
-        expect(position.verbs.length).toBeGreaterThanOrEqual(3);
-        expect(position.phrases.length).toBeGreaterThanOrEqual(2);
-        expect(position.attention.length).toBeGreaterThan(10);
-        expect(position.avoid.length).toBeGreaterThan(10);
+        expect(position.description.length).toBeGreaterThan(10);
       }
+    }
+  });
+
+  it("has rich enough question types", () => {
+    expect(questionTypes).toHaveLength(12);
+
+    for (const type of questionTypes) {
+      expect(type.verbs.length).toBeGreaterThanOrEqual(5);
+      expect(type.readingFocus.length).toBeGreaterThanOrEqual(5);
+      expect(type.avoid.length).toBeGreaterThanOrEqual(3);
+      expect(type.starterPhrases.length).toBeGreaterThanOrEqual(3);
+      expect(type.positiveCards.length).toBeGreaterThan(20);
+      expect(type.tenseCards.length).toBeGreaterThan(20);
     }
   });
 });
