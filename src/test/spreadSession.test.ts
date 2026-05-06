@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cancelEditPosition,
   changeSessionQuestionType,
   clearPosition,
   clearSession,
@@ -67,6 +68,17 @@ describe("spread session state", () => {
 
     expect(replaced.cardsByPosition["three-situation"]).toEqual(moon);
     expect(replaced.editingPositionId).toBeUndefined();
+  });
+
+  it("cancels editing without losing or replacing the card", () => {
+    const withCard = selectCardForActivePosition(createSpreadSession("three-advice"), tenCups);
+    const editing = editPosition(withCard, "three-situation");
+    const canceled = cancelEditPosition(editing);
+    const blocked = selectCardForActivePosition(canceled, moon);
+
+    expect(canceled.editingPositionId).toBeUndefined();
+    expect(canceled.cardsByPosition["three-situation"]).toEqual(tenCups);
+    expect(blocked.cardsByPosition["three-situation"]).toEqual(tenCups);
   });
 
   it("clears one position", () => {

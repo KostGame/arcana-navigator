@@ -74,6 +74,13 @@ export function editPosition(session: SpreadSession, positionId: string): Spread
   };
 }
 
+export function cancelEditPosition(session: SpreadSession): SpreadSession {
+  return {
+    ...session,
+    editingPositionId: undefined,
+  };
+}
+
 export function clearPosition(session: SpreadSession, positionId: string): SpreadSession {
   if (!session.cardsByPosition[positionId]) {
     return session;

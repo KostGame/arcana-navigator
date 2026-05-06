@@ -7,6 +7,7 @@ import { spreadLayouts } from "./data/spreadLayouts";
 import { suits } from "./data/suits";
 import { composeReading } from "./lib/reading";
 import {
+  cancelEditPosition,
   changeSessionLayout,
   changeSessionQuestionType,
   clearPosition,
@@ -35,6 +36,7 @@ import type {
 } from "./types";
 
 type AppMode = "quick" | "session";
+type PickerCommitMode = "none" | "card" | "orientation";
 
 interface CardPickerState {
   cardKind: CardKind;
@@ -86,6 +88,7 @@ if (!appRoot) {
 }
 
 const app = appRoot;
+let pendingScrollPositionId: string | undefined;
 
 render();
 
@@ -117,6 +120,7 @@ function render() {
   `;
 
   wireEvents();
+  scrollPendingPositionIntoView();
 }
 
 function renderQuickMode() {
@@ -192,14 +196,6 @@ function renderSessionMode() {
           </div>
         </section>
 
-        <section class="panel quick-panel" aria-labelledby="session-picker-title">
-          <div class="section-head">
-            <p class="eyebrow">Активная позиция</p>
-            <h2 id="session-picker-title">${activePosition.title}</h2>
-            <p>${state.session.editingPositionId === activePosition.id ? "Режим замены включён: следующий выбор карты обновит эту позицию." : "Следующий выбор карты закрепится здесь и откроет следующую пустую позицию."}</p>
-          </div>
-          ${renderSessionPicker()}
-        </section>
       </div>
 
       <aside class="panel result-panel" aria-labelledby="session-result-title">
@@ -313,14 +309,6 @@ function renderPickerControls(scope: "quick" | "session", picker: CardPickerStat
   `;
 }
 
-function renderSessionPicker() {
-  return `
-    <div class="controls session-picker">
-      ${renderPickerControls("session", state.sessionPicker)}
-    </div>
-  `;
-}
-
 function renderCardControls(attr: string, picker: CardPickerState) {
   if (picker.cardKind === "major") {
     return `
@@ -381,7 +369,7 @@ function renderSessionPosition(position: SpreadLayout["positions"][number], inde
   const cardName = selection ? cardLabel(selection.card) : "Карта не выбрана";
 
   return `
-    <article class="session-position ${isActive ? "is-active" : ""} ${selection ? "is-filled" : ""}">
+    <article class="session-position ${isActive ? "is-active" : ""} ${selection ? "is-filled" : ""}" data-session-card="${position.id}">
       <button class="session-position-main" type="button" data-session-position="${position.id}">
         <span class="position-number">${index + 1}</span>
         <span>
@@ -394,7 +382,38 @@ function renderSessionPosition(position: SpreadLayout["positions"][number], inde
         <button type="button" data-session-edit="${position.id}" ${selection ? "" : "disabled"}>Изменить</button>
         <button type="button" data-session-clear="${position.id}" ${selection ? "" : "disabled"}>Очистить</button>
       </div>
+      ${renderInlineSessionPicker(position.id, selection, isActive, isEditing)}
     </article>
+  `;
+}
+
+function renderInlineSessionPicker(
+  positionId: string,
+  selection: PositionCardSelection | undefined,
+  isActive: boolean,
+  isEditing: boolean,
+) {
+  if (!isActive || (selection && !isEditing)) {
+    return "";
+  }
+
+  const currentLine =
+    selection && isEditing
+      ? `<p class="current-card-line">Сейчас выбрано: ${cardLabel(selection.card)} · ${orientationLabel(selection.orientation)}</p>`
+      : `<p class="current-card-line">Выберите карту для этой позиции. Она закрепится сразу после выбора.</p>`;
+
+  return `
+    <div class="inline-picker" data-inline-picker="${positionId}">
+      ${currentLine}
+      <div class="controls session-picker">
+        ${renderPickerControls("session", state.sessionPicker)}
+        ${
+          isEditing
+            ? `<button class="secondary-button wide-control" type="button" data-session-cancel-edit="${positionId}">Отмена</button>`
+            : ""
+        }
+      </div>
+    </div>
   `;
 }
 
@@ -654,6 +673,7 @@ function wireSessionEvents() {
     select.addEventListener("change", () => {
       if (select.dataset.sessionAction === "activePosition") {
         state.session = setActivePosition(state.session, select.value);
+        pendingScrollPositionId = state.session.activePositionId;
         render();
       }
     });
@@ -662,13 +682,17 @@ function wireSessionEvents() {
   app.querySelectorAll<HTMLButtonElement>("button[data-session-position]").forEach((button) => {
     button.addEventListener("click", () => {
       state.session = setActivePosition(state.session, button.dataset.sessionPosition ?? state.session.activePositionId);
+      pendingScrollPositionId = state.session.activePositionId;
       render();
     });
   });
 
   app.querySelectorAll<HTMLButtonElement>("button[data-session-edit]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.session = editPosition(state.session, button.dataset.sessionEdit ?? state.session.activePositionId);
+      const positionId = button.dataset.sessionEdit ?? state.session.activePositionId;
+      state.session = editPosition(state.session, positionId);
+      syncSessionPickerFromPosition(positionId);
+      pendingScrollPositionId = state.session.activePositionId;
       render();
     });
   });
@@ -676,6 +700,15 @@ function wireSessionEvents() {
   app.querySelectorAll<HTMLButtonElement>("button[data-session-clear]").forEach((button) => {
     button.addEventListener("click", () => {
       state.session = clearPosition(state.session, button.dataset.sessionClear ?? state.session.activePositionId);
+      pendingScrollPositionId = state.session.activePositionId;
+      render();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-session-cancel-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.session = cancelEditPosition(state.session);
+      pendingScrollPositionId = button.dataset.sessionCancelEdit ?? state.session.activePositionId;
       render();
     });
   });
@@ -690,20 +723,30 @@ function wireSessionEvents() {
   app.querySelectorAll<HTMLButtonElement>("button[data-session-group]").forEach((button) => {
     button.addEventListener("click", () => {
       state.sessionPicker.cardKind = button.dataset.sessionGroup as CardKind;
-      commitSessionPicker();
+      render();
     });
   });
 
   app.querySelectorAll<HTMLSelectElement>("select[data-session-picker]").forEach((select) => {
     select.addEventListener("change", () => {
-      updatePicker(state.sessionPicker, select.dataset.sessionPicker, select.value);
-      commitSessionPicker();
+      const control = select.dataset.sessionPicker;
+      updatePicker(state.sessionPicker, control, select.value);
+      commitSessionPicker(control === "orientation" ? "orientation" : "card");
     });
   });
 }
 
-function commitSessionPicker() {
+function commitSessionPicker(mode: PickerCommitMode) {
+  const activeSelection = state.session.cardsByPosition[state.session.activePositionId];
+  const isEditing = state.session.editingPositionId === state.session.activePositionId;
+
+  if (mode === "none" || (mode === "orientation" && !activeSelection && !isEditing)) {
+    render();
+    return;
+  }
+
   state.session = selectCardForActivePosition(state.session, selectionFromPicker(state.sessionPicker));
+  pendingScrollPositionId = state.session.activePositionId;
   render();
 }
 
@@ -740,6 +783,41 @@ function updatePicker(picker: CardPickerState, control: string | undefined, valu
   } else if (control === "majorId") {
     picker.majorId = value as MajorId;
   }
+}
+
+function syncSessionPickerFromPosition(positionId: string) {
+  const selection = state.session.cardsByPosition[positionId];
+
+  if (!selection) {
+    return;
+  }
+
+  state.sessionPicker.cardKind = selection.cardKind;
+  state.sessionPicker.orientation = selection.orientation;
+
+  if (selection.card.type === "minor") {
+    state.sessionPicker.suitId = selection.card.suitId;
+    state.sessionPicker.rankId = selection.card.rankId;
+  } else if (selection.card.type === "court") {
+    state.sessionPicker.suitId = selection.card.suitId;
+    state.sessionPicker.courtId = selection.card.courtId;
+  } else {
+    state.sessionPicker.majorId = selection.card.majorId;
+  }
+}
+
+function scrollPendingPositionIntoView() {
+  if (!pendingScrollPositionId) {
+    return;
+  }
+
+  const positionId = pendingScrollPositionId;
+  pendingScrollPositionId = undefined;
+  window.requestAnimationFrame(() => {
+    app.querySelector<HTMLElement>(`[data-session-card="${positionId}"]`)?.scrollIntoView({
+      block: "nearest",
+    });
+  });
 }
 
 function selectionFromPicker(picker: CardPickerState): PositionCardSelection {
