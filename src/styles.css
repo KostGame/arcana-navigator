@@ -1,0 +1,409 @@
+:root {
+  color-scheme: dark;
+  --bg: #090b08;
+  --panel: #151913;
+  --panel-strong: #1e2119;
+  --text: #f4f0e7;
+  --muted: #c8c0b1;
+  --line: #3a3d31;
+  --gold: #e6c96a;
+  --moss: #9fc875;
+  --rose: #d98d7a;
+  --cyan: #8ac5c3;
+  --ink: #0c0f0a;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 0;
+  background: var(--bg);
+}
+
+body {
+  min-width: 0;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    linear-gradient(140deg, rgba(36, 23, 26, 0.8), transparent 32rem),
+    linear-gradient(180deg, #11140f 0%, #080a07 100%);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 18px 14px 36px;
+}
+
+.hero {
+  display: grid;
+  gap: 16px;
+  align-items: end;
+  min-width: 0;
+  padding: 18px 0 14px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--cyan);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 0;
+  color: var(--gold);
+  font-size: clamp(2rem, 2.4rem, 2.4rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+h3 {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font-size: 0.95rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 0;
+}
+
+.lead {
+  max-width: 62ch;
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.hero-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+}
+
+.hero-note span,
+.hero-note strong,
+.chips span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: #0f120d;
+}
+
+.hero-note strong {
+  color: var(--moss);
+}
+
+.layout {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.workbench {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(30, 33, 25, 0.98), rgba(18, 22, 16, 0.98));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.quick-panel,
+.spreads-panel,
+.result-panel {
+  padding: 14px;
+}
+
+.section-head {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+label,
+fieldset {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+
+label span,
+legend {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+}
+
+select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #535741;
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: var(--ink);
+  color: var(--text);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  min-width: 0;
+}
+
+.segmented button,
+.plain-card-button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #11150f;
+  color: var(--text);
+}
+
+.segmented button {
+  min-width: 0;
+  padding: 9px 10px;
+  text-align: center;
+}
+
+.segmented button.is-active,
+.mini-card.is-active .plain-card-button {
+  border-color: rgba(230, 201, 106, 0.72);
+  background: rgba(230, 201, 106, 0.12);
+  color: var(--gold);
+}
+
+.position-grid,
+.reference-grid,
+.card-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mini-card {
+  min-width: 0;
+}
+
+.plain-card-button {
+  display: grid;
+  width: 100%;
+  min-height: 116px;
+  gap: 8px;
+  align-content: start;
+  padding: 12px;
+  text-align: left;
+}
+
+.plain-card-button span {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.plain-card-button small,
+.selection-line {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.result-panel {
+  align-self: start;
+}
+
+.sticky-result {
+  display: grid;
+  gap: 14px;
+}
+
+.reading-block {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.reading-block p {
+  color: #eee8dc;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chips span {
+  color: #eaf5da;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.phrase-block p {
+  border-left: 3px solid var(--moss);
+  padding-left: 10px;
+  color: #f7f1e8;
+}
+
+.split-reading {
+  gap: 12px;
+}
+
+.compact-details {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  color: var(--muted);
+}
+
+.compact-details summary,
+.reference-panel summary {
+  cursor: pointer;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.compact-details ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.reference-panel {
+  padding: 12px;
+}
+
+.reference-panel summary {
+  list-style-position: outside;
+  padding: 2px 0;
+}
+
+.card-list {
+  margin-top: 12px;
+}
+
+.reference-card {
+  min-width: 0;
+  border: 1px solid rgba(58, 61, 49, 0.8);
+  border-radius: 8px;
+  padding: 11px;
+  background: rgba(12, 15, 10, 0.52);
+}
+
+.reference-card p {
+  margin-bottom: 10px;
+  color: var(--muted);
+}
+
+dl {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+dt {
+  color: var(--rose);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+dd {
+  margin: -4px 0 4px;
+  color: #eee8dc;
+}
+
+@media (min-width: 620px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  fieldset,
+  .wide-control {
+    grid-column: 1 / -1;
+  }
+
+  .position-grid,
+  .card-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+    align-items: start;
+  }
+
+  .sticky-result {
+    position: sticky;
+    top: 14px;
+  }
+
+  .card-list.compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
