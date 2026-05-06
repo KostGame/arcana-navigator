@@ -461,10 +461,10 @@ select {
 
 .reading-block {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
   border-top: 1px solid var(--line);
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .reading-block p {
@@ -490,6 +490,18 @@ select {
   color: #f7f1e8;
 }
 
+.compact-phrase p {
+  margin-top: 6px;
+}
+
+.summary-card {
+  gap: 10px;
+}
+
+.summary-card p {
+  color: #eee8dc;
+}
+
 .split-reading {
   gap: 12px;
 }
@@ -510,6 +522,17 @@ select {
 .compact-details ul {
   margin: 10px 0 0;
   padding-left: 18px;
+}
+
+.details-stack {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.compact-reading {
+  display: grid;
+  gap: 10px;
 }
 
 .reference-panel {

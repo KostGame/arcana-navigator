@@ -190,18 +190,21 @@ export function composeSpreadSummary(session: SpreadSession): SpreadSummary {
       title,
       filledCount: 0,
       totalCount,
-      text: "Выберите карту для активной позиции. После каждой карты здесь появится общий вывод по уже заполненным местам.",
+      text: `Заполнено: 0/${totalCount}`,
       focus: [],
+      line: [],
+      speechPhrase: "Выберите карту для первой позиции.",
     };
   }
 
   const focus = readings.flatMap((item) => item.reading.verbs.slice(0, 2)).filter(unique).slice(0, 8);
-  const text = [
-    `Заполнено ${filledRequired.length} из ${totalCount} обязательных позиций.`,
-    readings
-      .map((item) => `${item.positionTitle}: ${item.reading.cardName.toLowerCase()} помогает читать тему как ${item.reading.summary}`)
-      .join(" "),
-  ].join(" ");
+  const line = readings.map((item) => `${item.positionTitle} — ${item.reading.cardName}`);
+  const speechPhrase = readings[0]?.reading.phrases[0] ?? "Начните с первой выбранной карты.";
+  const adviceReading = readings.find((item) => layout.positions.find((position) => position.id === item.positionId)?.role === "advice");
+  const advice = adviceReading
+    ? `${adviceReading.reading.cardName}: ${adviceReading.reading.phrases[0] ?? adviceReading.reading.summary}`
+    : undefined;
+  const text = `Заполнено: ${filledRequired.length}/${totalCount}. Линия: ${line.join(" · ")}. Акцент: ${focus.slice(0, 5).join(", ")}. Фраза: ${speechPhrase}${advice ? ` Совет: ${advice}` : ""}`;
 
   return {
     title,
@@ -209,6 +212,9 @@ export function composeSpreadSummary(session: SpreadSession): SpreadSummary {
     totalCount,
     text,
     focus,
+    line,
+    speechPhrase,
+    advice,
   };
 }
 

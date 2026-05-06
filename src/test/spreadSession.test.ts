@@ -144,4 +144,38 @@ describe("spread session state", () => {
 
     expect(composeSpreadSummary(session).title).toBe("Итог расклада");
   });
+
+  it("keeps spread summary compact without full reading summaries", () => {
+    const first = selectCardForActivePosition(createSpreadSession("three-advice"), tenCups);
+    const second = selectCardForActivePosition(first, moon);
+    const readings = composeSpreadSessionReadings(second);
+    const summary = composeSpreadSummary(second);
+
+    expect(summary.text).toContain("Заполнено: 2/4");
+    expect(summary.text).toContain("Линия:");
+    expect(summary.text).toContain("Акцент:");
+    expect(summary.text).toContain("Фраза:");
+    expect(summary.text).toContain(readings[0].reading.cardName);
+    expect(summary.text).toContain(readings[1].reading.cardName);
+    expect(summary.focus.length).toBeGreaterThan(0);
+    expect(summary.line).toHaveLength(2);
+    expect(summary.speechPhrase.length).toBeGreaterThan(0);
+    expect(summary.text).not.toContain(readings[0].reading.summary);
+    expect(summary.text.length).toBeLessThan(700);
+  });
+
+  it("adds advice as a short separate line when advice position is filled", () => {
+    let session = createSpreadSession("three-advice");
+
+    session = selectCardForActivePosition(session, tenCups);
+    session = selectCardForActivePosition(session, moon);
+    session = selectCardForActivePosition(session, sevenSwords);
+    session = selectCardForActivePosition(session, defaultEightCups);
+
+    const summary = composeSpreadSummary(session);
+
+    expect(summary.title).toBe("Итог расклада");
+    expect(summary.advice).toContain("8");
+    expect(summary.text).toContain("Совет:");
+  });
 });
