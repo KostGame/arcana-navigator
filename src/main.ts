@@ -1,16 +1,28 @@
 import "./styles.css";
 import { courtCards } from "./data/court";
 import { majors } from "./data/majors";
+import { questionTypes } from "./data/questionTypes";
 import { ranks } from "./data/ranks";
-import { spreads } from "./data/spreads";
+import { spreadLayouts } from "./data/spreadLayouts";
 import { suits } from "./data/suits";
 import { composeReading } from "./lib/reading";
-import type { CourtId, MajorId, Orientation, RankId, ReadingCard, Spread, SpreadId, SuitId } from "./types";
+import type {
+  CourtId,
+  MajorId,
+  Orientation,
+  QuestionTypeId,
+  RankId,
+  ReadingCard,
+  SpreadLayout,
+  SpreadLayoutId,
+  SuitId,
+} from "./types";
 
 type CardGroup = "minor" | "court" | "major";
 
 interface AppState {
-  spreadId: SpreadId;
+  spreadId: SpreadLayoutId;
+  questionTypeId: QuestionTypeId;
   positionId: string;
   cardGroup: CardGroup;
   suitId: SuitId;
@@ -21,8 +33,9 @@ interface AppState {
 }
 
 const state: AppState = {
-  spreadId: "career",
-  positionId: "career-energy",
+  spreadId: "three-advice",
+  questionTypeId: "diagnosis",
+  positionId: "three-situation",
   cardGroup: "minor",
   suitId: "cups",
   rankId: "ten",
@@ -48,6 +61,7 @@ function render() {
 
   const reading = composeReading({
     spreadId: state.spreadId,
+    questionTypeId: state.questionTypeId,
     positionId: state.positionId,
     orientation: state.orientation,
     card: currentCard(),
@@ -81,7 +95,7 @@ function render() {
             <div class="section-head">
               <p class="eyebrow">Расклады</p>
               <h2 id="spreads-title">Позиции выбранного расклада</h2>
-              <p>${spread.exampleQuestion}</p>
+              <p>${spread.description}</p>
             </div>
             <div class="position-grid">
               ${spread.positions
@@ -90,7 +104,7 @@ function render() {
                     <article class="mini-card ${item.id === state.positionId ? "is-active" : ""}">
                       <button class="plain-card-button" type="button" data-position="${item.id}">
                         <span>${item.title}</span>
-                        <small>${item.shows}</small>
+                        <small>${item.description}${item.optional ? " · опционально" : ""}</small>
                       </button>
                     </article>
                   `,
@@ -106,7 +120,7 @@ function render() {
           <div class="sticky-result">
             <p class="eyebrow">Текущий выбор</p>
             <h2 id="result-title">${reading.cardName}</h2>
-            <p class="selection-line">${reading.spreadTitle} · ${reading.positionTitle} · ${state.orientation === "upright" ? "прямая" : "перевёрнутая"}</p>
+            <p class="selection-line">${reading.spreadTitle} · ${reading.questionTitle} · ${reading.positionTitle} · ${state.orientation === "upright" ? "прямая" : "перевёрнутая"}</p>
             <div class="reading-block">
               <h3>Краткий смысл</h3>
               <p>${reading.summary}</p>
@@ -144,13 +158,20 @@ function render() {
   wireEvents();
 }
 
-function renderControls(spread: Spread) {
+function renderControls(spread: SpreadLayout) {
   return `
     <div class="controls">
       <label>
         <span>Тип расклада</span>
         <select data-control="spreadId">
-          ${spreads.map((item) => option(item.id, item.title, item.id === state.spreadId)).join("")}
+          ${spreadLayouts.map((item) => option(item.id, item.title, item.id === state.spreadId)).join("")}
+        </select>
+      </label>
+
+      <label>
+        <span>Тип вопроса</span>
+        <select data-control="questionTypeId">
+          ${questionTypes.map((item) => option(item.id, item.title, item.id === state.questionTypeId)).join("")}
         </select>
       </label>
 
@@ -228,6 +249,29 @@ function renderCardControls() {
 function renderReference() {
   return `
     <section class="reference-grid" aria-label="Справочник карт">
+      <details class="panel reference-panel" open>
+        <summary>Типы вопросов</summary>
+        <div class="card-list compact">
+          ${questionTypes
+            .map(
+              (type) => `
+                <article class="reference-card">
+                  <h3>${type.title}</h3>
+                  <p>${type.description}</p>
+                  <div class="chips">${type.verbs.map((verb) => `<span>${verb}</span>`).join("")}</div>
+                  <dl>
+                    <dt>Ищем</dt><dd>${type.readingFocus.join(", ")}</dd>
+                    <dt>Позитивные карты</dt><dd>${type.positiveCards}</dd>
+                    <dt>Напряжённые карты</dt><dd>${type.tenseCards}</dd>
+                    <dt>Не делать</dt><dd>${type.avoid.join("; ")}</dd>
+                  </dl>
+                </article>
+              `,
+            )
+            .join("")}
+        </div>
+      </details>
+
       <details class="panel reference-panel" open>
         <summary>Масти</summary>
         <div class="card-list">
@@ -335,8 +379,11 @@ function wireEvents() {
       }
 
       if (control === "spreadId") {
-        state.spreadId = select.value as SpreadId;
+        state.spreadId = select.value as SpreadLayoutId;
+        state.questionTypeId = currentSpread().defaultQuestionTypeId;
         state.positionId = currentSpread().positions[0].id;
+      } else if (control === "questionTypeId") {
+        state.questionTypeId = select.value as QuestionTypeId;
       } else if (control === "positionId") {
         state.positionId = select.value;
       } else if (control === "orientation") {
@@ -371,7 +418,7 @@ function wireEvents() {
 }
 
 function currentSpread() {
-  return spreads.find((spread) => spread.id === state.spreadId) ?? spreads[0];
+  return spreadLayouts.find((spread) => spread.id === state.spreadId) ?? spreadLayouts[0];
 }
 
 function currentCard(): ReadingCard {
