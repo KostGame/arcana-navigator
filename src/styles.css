@@ -366,7 +366,8 @@ select {
 
 .position-actions button,
 .danger-button,
-.secondary-button {
+.secondary-button,
+.primary-button {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -384,6 +385,12 @@ select {
 .danger-button {
   border-color: rgba(217, 141, 122, 0.58);
   color: #ffd5cc;
+}
+
+.primary-button {
+  border-color: rgba(230, 201, 106, 0.72);
+  background: rgba(230, 201, 106, 0.14);
+  color: var(--gold);
 }
 
 .secondary-button {

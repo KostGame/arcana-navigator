@@ -407,6 +407,7 @@ function renderInlineSessionPicker(
       ${currentLine}
       <div class="controls session-picker">
         ${renderPickerControls("session", state.sessionPicker)}
+        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать эту карту</button>
         ${
           isEditing
             ? `<button class="secondary-button wide-control" type="button" data-session-cancel-edit="${positionId}">Отмена</button>`
@@ -710,6 +711,13 @@ function wireSessionEvents() {
       state.session = cancelEditPosition(state.session);
       pendingScrollPositionId = button.dataset.sessionCancelEdit ?? state.session.activePositionId;
       render();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-session-pick-current]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.session = setActivePosition(state.session, button.dataset.sessionPickCurrent ?? state.session.activePositionId);
+      commitSessionPicker("card");
     });
   });
 
