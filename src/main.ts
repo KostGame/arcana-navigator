@@ -102,7 +102,7 @@ function render() {
         <div>
           <p class="eyebrow">Arcana Navigator</p>
           <h1>Навигатор раскладов Таро</h1>
-          <p class="lead">Выберите тип расклада и позицию, затем найдите карту. Навигатор подскажет, как читать карту именно на этом месте расклада.</p>
+          <p class="lead">Выберите расклад, позицию и карту. Сначала — фраза для живого чтения, детали — ниже.</p>
         </div>
         <div class="hero-note">
           <span>Справочный режим</span>
@@ -180,7 +180,7 @@ function renderSessionMode() {
           <div class="section-head">
             <p class="eyebrow">Пошаговый режим</p>
             <h2 id="session-title">Собрать расклад</h2>
-            <p>Выберите карту физической колодой и укажите её для активной позиции. Выбор закрепляется сразу.</p>
+            <p>Выберите карту для активной позиции.</p>
           </div>
           ${renderSessionControls(layout)}
         </section>
@@ -189,7 +189,7 @@ function renderSessionMode() {
           <div class="section-head">
             <p class="eyebrow">Позиции</p>
             <h2 id="session-positions-title">${layout.title}</h2>
-            <p>${layout.description}</p>
+            <p>${compactText(layout.description, 18)}</p>
           </div>
           <div class="session-positions">
             ${layout.positions.map((position, index) => renderSessionPosition(position, index)).join("")}
@@ -203,15 +203,24 @@ function renderSessionMode() {
           <p class="eyebrow">${summary.title}</p>
           <h2 id="session-result-title">${summary.filledCount}/${summary.totalCount} позиций</h2>
           <p class="selection-line">${layout.title} · ${questionTitle(state.session.questionTypeId)}</p>
-          <div class="reading-block">
-            <h3>${summary.title}</h3>
-            <p>${summary.text}</p>
+          <div class="reading-block summary-card">
+            <p><strong>Заполнено:</strong> ${summary.filledCount}/${summary.totalCount}</p>
+            ${
+              summary.line.length > 0
+                ? `<p><strong>Линия:</strong> ${summary.line.join(" · ")}</p>`
+                : ""
+            }
+            ${
+              summary.focus.length > 0
+                ? `<div><h3>Главный акцент</h3><div class="chips">${summary.focus.slice(0, 6).map((verb) => `<span>${verb}</span>`).join("")}</div></div>`
+                : ""
+            }
+            <div class="phrase-block compact-phrase">
+              <h3>Фраза для чтения</h3>
+              <p>${summary.speechPhrase}</p>
+            </div>
+            ${summary.advice ? `<p><strong>Совет:</strong> ${summary.advice}</p>` : ""}
           </div>
-          ${
-            summary.focus.length > 0
-              ? `<div class="reading-block"><h3>Ключевые глаголы</h3><div class="chips">${summary.focus.map((verb) => `<span>${verb}</span>`).join("")}</div></div>`
-              : ""
-          }
           <div class="session-readings">
             ${
               readings.length > 0
@@ -291,9 +300,9 @@ function renderPickerControls(scope: "quick" | "session", picker: CardPickerStat
     <fieldset>
       <legend>Группа карты</legend>
       <div class="segmented">
-        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "Масть + достоинство")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "Придворная")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "Старший аркан")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "Младшие")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "Двор")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "Старшие")}
       </div>
     </fieldset>
 
@@ -374,14 +383,18 @@ function renderSessionPosition(position: SpreadLayout["positions"][number], inde
         <span class="position-number">${index + 1}</span>
         <span>
           <strong>${position.title}${position.optional ? " · опционально" : ""}</strong>
-          <small>${position.description}</small>
+          <small>${compactText(position.description, 14)}</small>
           <em>${cardName}${selection ? ` · ${orientationLabel(selection.orientation)}` : ""}${isEditing ? " · замена" : ""}</em>
         </span>
       </button>
-      <div class="position-actions">
-        <button type="button" data-session-edit="${position.id}" ${selection ? "" : "disabled"}>Изменить</button>
-        <button type="button" data-session-clear="${position.id}" ${selection ? "" : "disabled"}>Очистить</button>
-      </div>
+      ${
+        selection
+          ? `<div class="position-actions">
+              <button type="button" data-session-edit="${position.id}">Изменить</button>
+              <button type="button" data-session-clear="${position.id}">Очистить</button>
+            </div>`
+          : ""
+      }
       ${renderInlineSessionPicker(position.id, selection, isActive, isEditing)}
     </article>
   `;
@@ -400,14 +413,14 @@ function renderInlineSessionPicker(
   const currentLine =
     selection && isEditing
       ? `<p class="current-card-line">Сейчас выбрано: ${cardLabel(selection.card)} · ${orientationLabel(selection.orientation)}</p>`
-      : `<p class="current-card-line">Выберите карту для этой позиции. Она закрепится сразу после выбора.</p>`;
+      : `<p class="current-card-line">Выберите карту</p>`;
 
   return `
     <div class="inline-picker" data-inline-picker="${positionId}">
       ${currentLine}
       <div class="controls session-picker">
         ${renderPickerControls("session", state.sessionPicker)}
-        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать эту карту</button>
+        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать</button>
         ${
           isEditing
             ? `<button class="secondary-button wide-control" type="button" data-session-cancel-edit="${positionId}">Отмена</button>`
@@ -424,29 +437,27 @@ function renderReadingResult(reading: ReturnType<typeof composeReading>, selecti
     <h2 id="result-title">${reading.cardName}</h2>
     <p class="selection-line">${selectionLine}</p>
     <div class="reading-block">
-      <h3>Краткий смысл</h3>
-      <p>${reading.summary}</p>
+      <h3>Суть</h3>
+      <p>${compactSense(reading)}</p>
     </div>
     <div class="reading-block">
       <h3>Глаголы</h3>
-      <div class="chips">${reading.verbs.map((verb) => `<span>${verb}</span>`).join("")}</div>
+      <div class="chips">${reading.verbs.slice(0, 6).map((verb) => `<span>${verb}</span>`).join("")}</div>
     </div>
     <div class="reading-block phrase-block">
-      <h3>Фразы для старта</h3>
-      ${reading.phrases.map((phrase) => `<p>${phrase}</p>`).join("")}
-    </div>
-    <div class="reading-block split-reading">
-      <div>
-        <h3>Обратить внимание</h3>
-        <p>${reading.attention}</p>
-      </div>
-      <div>
-        <h3>Не трактовать так</h3>
-        <p>${reading.avoid}</p>
-      </div>
+      <h3>Фраза</h3>
+      <p>${firstPhrase(reading)}</p>
     </div>
     <details class="compact-details">
-      <summary>Как собран смысл</summary>
+      <summary>Подробнее</summary>
+      <div class="details-stack">
+        <h3>Полный смысл</h3>
+        <p>${reading.summary}</p>
+        <h3>Внимание</h3>
+        <p>${reading.attention}</p>
+        <h3>Анти-трактовка</h3>
+        <p>${reading.avoid}</p>
+      </div>
       <ul>
         ${reading.parts.map((part) => `<li>${part}</li>`).join("")}
       </ul>
@@ -456,25 +467,27 @@ function renderReadingResult(reading: ReturnType<typeof composeReading>, selecti
 
 function renderSessionReading(positionTitle: string, reading: ReturnType<typeof composeReading>, orientation: Orientation) {
   return `
-    <details class="session-reading" open>
-      <summary>${positionTitle}: ${reading.cardName} · ${orientationLabel(orientation)}</summary>
-      <div class="reading-block">
-        <h3>Краткий смысл</h3>
-        <p>${reading.summary}</p>
-      </div>
-      <div class="reading-block phrase-block">
-        <h3>Фразы</h3>
-        ${reading.phrases.slice(0, 3).map((phrase) => `<p>${phrase}</p>`).join("")}
-      </div>
-      <div class="reading-block">
-        <h3>Внимание</h3>
-        <p>${reading.attention}</p>
-      </div>
-      <div class="reading-block">
-        <h3>Анти-трактовка</h3>
-        <p>${reading.avoid}</p>
-      </div>
-    </details>
+    <article class="session-reading compact-session-reading">
+      <h3>${positionTitle}: ${reading.cardName} · ${orientationLabel(orientation)}</h3>
+      <p><strong>Суть:</strong> ${compactSense(reading)}</p>
+      <p class="session-phrase"><strong>Фраза:</strong> «${stripFinalPeriod(firstPhrase(reading))}»</p>
+      <p class="verb-line"><strong>Глаголы:</strong> ${reading.verbs.slice(0, 6).join(" · ")}</p>
+      <details class="compact-details">
+        <summary>Подробнее</summary>
+        <div class="details-stack">
+          <h3>Полный смысл</h3>
+          <p>${reading.summary}</p>
+          <h3>Внимание</h3>
+          <p>${reading.attention}</p>
+          <h3>Анти-трактовка</h3>
+          <p>${reading.avoid}</p>
+          <h3>Как собран смысл</h3>
+          <ul>
+            ${reading.parts.map((part) => `<li>${part}</li>`).join("")}
+          </ul>
+        </div>
+      </details>
+    </article>
   `;
 }
 
@@ -600,6 +613,23 @@ function renderReference() {
       </details>
     </section>
   `;
+}
+
+function compactSense(reading: ReturnType<typeof composeReading>) {
+  return compactText(reading.phrases[0]?.replace(/[.。]$/u, "") ?? reading.summary, 16);
+}
+
+function firstPhrase(reading: ReturnType<typeof composeReading>) {
+  return reading.phrases[0] ?? reading.summary;
+}
+
+function stripFinalPeriod(text: string) {
+  return text.replace(/[.。]$/u, "");
+}
+
+function compactText(text: string, maxWords: number) {
+  const words = text.split(/\s+/u).filter(Boolean);
+  return words.length > maxWords ? `${words.slice(0, maxWords).join(" ")}...` : text;
 }
 
 function wireEvents() {

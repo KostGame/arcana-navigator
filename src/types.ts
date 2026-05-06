@@ -225,4 +225,7 @@ export interface SpreadSummary {
   totalCount: number;
   text: string;
   focus: string[];
+  line: string[];
+  speechPhrase: string;
+  advice?: string;
 }
