@@ -227,7 +227,7 @@ select {
 
 .segmented {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -242,7 +242,7 @@ select {
 
 .segmented button {
   min-width: 0;
-  padding: 9px 10px;
+  padding: 8px 8px;
   text-align: center;
 }
 
@@ -399,32 +399,50 @@ select {
 
 .inline-picker {
   display: grid;
-  gap: 10px;
+  gap: 7px;
   min-width: 0;
   border-top: 1px solid rgba(58, 61, 49, 0.9);
-  padding-top: 10px;
+  padding-top: 7px;
 }
 
 .current-card-line {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
 }
 
 .session-picker {
-  gap: 10px;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .session-picker select {
-  padding: 9px 10px;
+  padding: 7px 8px;
 }
 
 .session-picker .segmented {
-  gap: 5px;
+  gap: 4px;
 }
 
 .session-picker .segmented button {
-  padding: 8px 9px;
-  font-size: 0.92rem;
+  min-height: 34px;
+  padding: 6px 6px;
+  font-size: 0.86rem;
+}
+
+.session-picker label,
+.session-picker fieldset {
+  gap: 4px;
+}
+
+.session-picker label span,
+.session-picker legend {
+  font-size: 0.76rem;
+}
+
+.session-picker .primary-button,
+.session-picker .secondary-button {
+  min-height: 34px;
+  padding: 6px 8px;
 }
 
 .session-reading,
@@ -623,10 +641,6 @@ dd {
 
   .controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .segmented {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   fieldset,

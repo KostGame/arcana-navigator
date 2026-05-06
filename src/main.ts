@@ -300,9 +300,9 @@ function renderPickerControls(scope: "quick" | "session", picker: CardPickerStat
     <fieldset>
       <legend>Группа карты</legend>
       <div class="segmented">
-        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "Масть + достоинство")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "Придворная")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "Старший аркан")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "Младшие")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "Двор")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "Старшие")}
       </div>
     </fieldset>
 
@@ -387,10 +387,14 @@ function renderSessionPosition(position: SpreadLayout["positions"][number], inde
           <em>${cardName}${selection ? ` · ${orientationLabel(selection.orientation)}` : ""}${isEditing ? " · замена" : ""}</em>
         </span>
       </button>
-      <div class="position-actions">
-        <button type="button" data-session-edit="${position.id}" ${selection ? "" : "disabled"}>Изменить</button>
-        <button type="button" data-session-clear="${position.id}" ${selection ? "" : "disabled"}>Очистить</button>
-      </div>
+      ${
+        selection
+          ? `<div class="position-actions">
+              <button type="button" data-session-edit="${position.id}">Изменить</button>
+              <button type="button" data-session-clear="${position.id}">Очистить</button>
+            </div>`
+          : ""
+      }
       ${renderInlineSessionPicker(position.id, selection, isActive, isEditing)}
     </article>
   `;
@@ -409,14 +413,14 @@ function renderInlineSessionPicker(
   const currentLine =
     selection && isEditing
       ? `<p class="current-card-line">Сейчас выбрано: ${cardLabel(selection.card)} · ${orientationLabel(selection.orientation)}</p>`
-      : `<p class="current-card-line">Выберите карту. Она закрепится сразу.</p>`;
+      : `<p class="current-card-line">Выберите карту</p>`;
 
   return `
     <div class="inline-picker" data-inline-picker="${positionId}">
       ${currentLine}
       <div class="controls session-picker">
         ${renderPickerControls("session", state.sessionPicker)}
-        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать эту карту</button>
+        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать</button>
         ${
           isEditing
             ? `<button class="secondary-button wide-control" type="button" data-session-cancel-edit="${positionId}">Отмена</button>`
