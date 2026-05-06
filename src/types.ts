@@ -74,6 +74,7 @@ export type MajorId =
   | "world";
 
 export type Orientation = "upright" | "reversed";
+export type CardKind = "minor" | "court" | "major";
 
 export interface SpreadPosition {
   id: string;
@@ -194,4 +195,34 @@ export interface ReadingResult {
   attention: string;
   avoid: string;
   parts: string[];
+}
+
+export interface PositionCardSelection {
+  cardKind: CardKind;
+  card: ReadingCard;
+  orientation: Orientation;
+}
+
+export interface SpreadSession {
+  layoutId: SpreadLayoutId;
+  questionTypeId: QuestionTypeId;
+  activePositionId: string;
+  cardsByPosition: Record<string, PositionCardSelection>;
+  editingPositionId?: string;
+  lastUpdatedPositionId?: string;
+}
+
+export interface SpreadSessionPositionReading {
+  positionId: string;
+  positionTitle: string;
+  selection: PositionCardSelection;
+  reading: ReadingResult;
+}
+
+export interface SpreadSummary {
+  title: "Промежуточный вывод" | "Итог расклада";
+  filledCount: number;
+  totalCount: number;
+  text: string;
+  focus: string[];
 }
