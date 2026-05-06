@@ -365,7 +365,9 @@ select {
 }
 
 .position-actions button,
-.danger-button {
+.danger-button,
+.secondary-button,
+.primary-button {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -383,6 +385,46 @@ select {
 .danger-button {
   border-color: rgba(217, 141, 122, 0.58);
   color: #ffd5cc;
+}
+
+.primary-button {
+  border-color: rgba(230, 201, 106, 0.72);
+  background: rgba(230, 201, 106, 0.14);
+  color: var(--gold);
+}
+
+.secondary-button {
+  color: var(--muted);
+}
+
+.inline-picker {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border-top: 1px solid rgba(58, 61, 49, 0.9);
+  padding-top: 10px;
+}
+
+.current-card-line {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.session-picker {
+  gap: 10px;
+}
+
+.session-picker select {
+  padding: 9px 10px;
+}
+
+.session-picker .segmented {
+  gap: 5px;
+}
+
+.session-picker .segmented button {
+  padding: 8px 9px;
+  font-size: 0.92rem;
 }
 
 .session-reading,

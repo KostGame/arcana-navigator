@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cancelEditPosition,
   changeSessionQuestionType,
   clearPosition,
   clearSession,
@@ -30,12 +31,25 @@ const sevenSwords: PositionCardSelection = {
   orientation: "reversed",
 };
 
+const defaultEightCups: PositionCardSelection = {
+  cardKind: "minor",
+  card: { type: "minor", suitId: "cups", rankId: "eight" },
+  orientation: "upright",
+};
+
 describe("spread session state", () => {
   it("fixes the selected card to the active position", () => {
     const session = selectCardForActivePosition(createSpreadSession("three-advice"), tenCups);
 
     expect(session.cardsByPosition["three-situation"]).toEqual(tenCups);
     expect(session.lastUpdatedPositionId).toBe("three-situation");
+  });
+
+  it("fixes the current picker card by explicit action without changing controls", () => {
+    const session = selectCardForActivePosition(createSpreadSession("three-advice"), defaultEightCups);
+
+    expect(session.cardsByPosition["three-situation"]).toEqual(defaultEightCups);
+    expect(session.activePositionId).toBe("three-influence");
   });
 
   it("moves the active position to the next empty position after selection", () => {
@@ -67,6 +81,17 @@ describe("spread session state", () => {
 
     expect(replaced.cardsByPosition["three-situation"]).toEqual(moon);
     expect(replaced.editingPositionId).toBeUndefined();
+  });
+
+  it("cancels editing without losing or replacing the card", () => {
+    const withCard = selectCardForActivePosition(createSpreadSession("three-advice"), tenCups);
+    const editing = editPosition(withCard, "three-situation");
+    const canceled = cancelEditPosition(editing);
+    const blocked = selectCardForActivePosition(canceled, moon);
+
+    expect(canceled.editingPositionId).toBeUndefined();
+    expect(canceled.cardsByPosition["three-situation"]).toEqual(tenCups);
+    expect(blocked.cardsByPosition["three-situation"]).toEqual(tenCups);
   });
 
   it("clears one position", () => {
