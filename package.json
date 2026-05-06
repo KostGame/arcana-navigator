@@ -1,0 +1,19 @@
+{
+  "name": "arcana-navigator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Статический навигатор раскладов Таро для чтения карты на конкретной позиции.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^3.2.4"
+  }
+}
