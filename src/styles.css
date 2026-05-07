@@ -246,6 +246,12 @@ select {
   text-align: center;
 }
 
+.segmented button span {
+  display: inline-grid;
+  min-width: 1.25em;
+  place-items: center;
+}
+
 .segmented button.is-active,
 .mini-card.is-active .plain-card-button {
   border-color: rgba(230, 201, 106, 0.72);
@@ -436,7 +442,8 @@ select {
 .session-picker .segmented button {
   min-height: 34px;
   padding: 6px 6px;
-  font-size: 0.86rem;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .session-picker label,
