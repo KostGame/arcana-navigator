@@ -305,9 +305,9 @@ function renderPickerControls(scope: "quick" | "session", picker: CardPickerStat
     <fieldset>
       <legend>Группа карты</legend>
       <div class="segmented">
-        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "Младшие")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "Двор")}
-        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "Старшие")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "minor", "◆", "Младшие арканы")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "court", "♛", "Придворные карты")}
+        ${pickerGroupButton(groupAttr, picker.cardKind, "major", "★", "Старшие арканы")}
       </div>
     </fieldset>
 
@@ -971,10 +971,10 @@ function orientationLabel(orientation: Orientation) {
   return orientation === "upright" ? "прямая" : "перевёрнутая";
 }
 
-function pickerGroupButton(attr: string, activeGroup: CardKind, group: CardKind, label: string) {
+function pickerGroupButton(attr: string, activeGroup: CardKind, group: CardKind, label: string, fullLabel: string) {
   return `
-    <button class="${activeGroup === group ? "is-active" : ""}" type="button" ${attr}="${group}">
-      ${label}
+    <button class="${activeGroup === group ? "is-active" : ""}" type="button" ${attr}="${group}" aria-label="${fullLabel}" title="${fullLabel}">
+      <span aria-hidden="true">${label}</span>
     </button>
   `;
 }
