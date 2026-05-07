@@ -358,9 +358,9 @@ select {
 }
 
 .position-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -375,6 +375,16 @@ select {
   background: #11150f;
   color: var(--text);
   font-weight: 800;
+}
+
+.position-actions button {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .position-actions button:disabled {
@@ -443,6 +453,17 @@ select {
 .session-picker .secondary-button {
   min-height: 34px;
   padding: 6px 8px;
+}
+
+.session-picker .picker-action {
+  min-height: 34px;
+}
+
+.session-picker .icon-picker-action {
+  width: 42px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .session-reading,
@@ -520,6 +541,40 @@ select {
   color: #eee8dc;
 }
 
+.open-cards-essence {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.open-cards-essence h3 {
+  color: var(--gold);
+}
+
+.essence-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.essence-list li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.essence-list span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.essence-list strong {
+  color: #f4efe4;
+  font-size: 0.94rem;
+  overflow-wrap: anywhere;
+}
+
 .split-reading {
   gap: 12px;
 }
@@ -561,6 +616,7 @@ select {
 
 .compact-session-reading h3 {
   margin-bottom: 0;
+  font-size: 0.98rem;
 }
 
 .compact-session-reading p {
