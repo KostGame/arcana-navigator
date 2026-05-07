@@ -203,6 +203,7 @@ function renderSessionMode() {
           <p class="eyebrow">${summary.title}</p>
           <h2 id="session-result-title">${summary.filledCount}/${summary.totalCount} позиций</h2>
           <p class="selection-line">${layout.title} · ${questionTitle(state.session.questionTypeId)}</p>
+          ${readings.length > 0 ? renderOpenCardsEssence(readings, summary) : ""}
           <div class="reading-block summary-card">
             <p><strong>Заполнено:</strong> ${summary.filledCount}/${summary.totalCount}</p>
             ${
@@ -215,10 +216,14 @@ function renderSessionMode() {
                 ? `<div><h3>Главный акцент</h3><div class="chips">${summary.focus.slice(0, 6).map((verb) => `<span>${verb}</span>`).join("")}</div></div>`
                 : ""
             }
-            <div class="phrase-block compact-phrase">
-              <h3>Фраза для чтения</h3>
-              <p>${summary.speechPhrase}</p>
-            </div>
+            ${
+              readings.length === 0
+                ? `<div class="phrase-block compact-phrase">
+                    <h3>Фраза для чтения</h3>
+                    <p>${summary.speechPhrase}</p>
+                  </div>`
+                : ""
+            }
             ${summary.advice ? `<p><strong>Совет:</strong> ${summary.advice}</p>` : ""}
           </div>
           <div class="session-readings">
@@ -390,8 +395,8 @@ function renderSessionPosition(position: SpreadLayout["positions"][number], inde
       ${
         selection
           ? `<div class="position-actions">
-              <button type="button" data-session-edit="${position.id}">Изменить</button>
-              <button type="button" data-session-clear="${position.id}">Очистить</button>
+              <button type="button" data-session-edit="${position.id}" aria-label="Изменить карту" title="Изменить карту">✎</button>
+              <button type="button" data-session-clear="${position.id}" aria-label="Очистить позицию" title="Очистить позицию">×</button>
             </div>`
           : ""
       }
@@ -420,10 +425,10 @@ function renderInlineSessionPicker(
       ${currentLine}
       <div class="controls session-picker">
         ${renderPickerControls("session", state.sessionPicker)}
-        <button class="primary-button wide-control" type="button" data-session-pick-current="${positionId}">Выбрать</button>
+        <button class="primary-button ${isEditing ? "picker-action" : "wide-control"}" type="button" data-session-pick-current="${positionId}">Выбрать</button>
         ${
           isEditing
-            ? `<button class="secondary-button wide-control" type="button" data-session-cancel-edit="${positionId}">Отмена</button>`
+            ? `<button class="secondary-button picker-action icon-picker-action" type="button" data-session-cancel-edit="${positionId}" aria-label="Отмена изменения" title="Отмена изменения">↩</button>`
             : ""
         }
       </div>
@@ -468,10 +473,9 @@ function renderReadingResult(reading: ReturnType<typeof composeReading>, selecti
 function renderSessionReading(positionTitle: string, reading: ReturnType<typeof composeReading>, orientation: Orientation) {
   return `
     <article class="session-reading compact-session-reading">
-      <h3>${positionTitle}: ${reading.cardName} · ${orientationLabel(orientation)}</h3>
-      <p><strong>Суть:</strong> ${compactSense(reading)}</p>
-      <p class="session-phrase"><strong>Фраза:</strong> «${stripFinalPeriod(firstPhrase(reading))}»</p>
-      <p class="verb-line"><strong>Глаголы:</strong> ${reading.verbs.slice(0, 6).join(" · ")}</p>
+      <h3>${positionTitle} · ${reading.cardName} · ${orientationLabel(orientation)}</h3>
+      <p><strong>Смысл:</strong> ${readingShortMeaning(reading)}</p>
+      <p class="verb-line"><strong>Глаголы:</strong> ${reading.verbs.slice(0, 4).join(" · ")}</p>
       <details class="compact-details">
         <summary>Подробнее</summary>
         <div class="details-stack">
@@ -488,6 +492,34 @@ function renderSessionReading(positionTitle: string, reading: ReturnType<typeof 
         </div>
       </details>
     </article>
+  `;
+}
+
+function renderOpenCardsEssence(
+  readings: ReturnType<typeof composeSpreadSessionReadings>,
+  summary: ReturnType<typeof composeSpreadSummary>,
+) {
+  const essenceLines = readings
+    .slice(0, 5)
+    .map(
+      (item, index) => `
+        <li>
+          <span>${index + 1}. ${item.positionTitle}</span>
+          <strong>${readingShortMeaning(item.reading)}</strong>
+        </li>
+      `,
+    )
+    .join("");
+
+  return `
+    <section class="reading-block open-cards-essence" aria-label="Суть по открытым картам">
+      <h3>Суть по открытым картам</h3>
+      <ol class="essence-list">${essenceLines}</ol>
+      <div class="phrase-block compact-phrase">
+        <h3>Что сказать</h3>
+        <p>${spreadSpeechPhrase(readings, summary)}</p>
+      </div>
+    </section>
   `;
 }
 
@@ -619,6 +651,38 @@ function compactSense(reading: ReturnType<typeof composeReading>) {
   return compactText(reading.phrases[0]?.replace(/[.。]$/u, "") ?? reading.summary, 16);
 }
 
+function readingShortMeaning(reading: ReturnType<typeof composeReading>) {
+  const fragments = reading.parts.map(coreFragment).filter(uniqueText).slice(0, 2);
+  const verbs = reading.verbs.slice(0, 3);
+  return compactText([...fragments, ...verbs].filter(uniqueText).join(", "), 18);
+}
+
+function coreFragment(part: string) {
+  const afterDash = part.includes("—") ? part.slice(part.indexOf("—") + 1) : part;
+  const withoutLead = afterDash.replace(/^[^:]+:\s*/u, "");
+  return stripFinalPeriod(withoutLead.split(/[.!?]/u)[0]?.trim() ?? "");
+}
+
+function spreadSpeechPhrase(
+  readings: ReturnType<typeof composeSpreadSessionReadings>,
+  summary: ReturnType<typeof composeSpreadSummary>,
+) {
+  const first = readings[0];
+  const last = readings[readings.length - 1];
+  const focus = summary.focus.slice(0, 4).join(" · ");
+  const focusLine = focus ? ` Главный акцент: ${focus}.` : "";
+
+  if (!first) {
+    return summary.speechPhrase;
+  }
+
+  if (readings.length === 1 || !last) {
+    return `Расклад начинает с позиции «${first.positionTitle}»: ${readingShortMeaning(first.reading)}.${focusLine}`;
+  }
+
+  return `Расклад связывает «${first.positionTitle}» (${readingShortMeaning(first.reading)}) и «${last.positionTitle}» (${readingShortMeaning(last.reading)}).${focusLine}`;
+}
+
 function firstPhrase(reading: ReturnType<typeof composeReading>) {
   return reading.phrases[0] ?? reading.summary;
 }
@@ -630,6 +694,10 @@ function stripFinalPeriod(text: string) {
 function compactText(text: string, maxWords: number) {
   const words = text.split(/\s+/u).filter(Boolean);
   return words.length > maxWords ? `${words.slice(0, maxWords).join(" ")}...` : text;
+}
+
+function uniqueText(value: string, index: number, array: string[]) {
+  return value.length > 0 && array.indexOf(value) === index;
 }
 
 function wireEvents() {
