@@ -101,8 +101,12 @@ function render() {
       <header class="hero">
         <div>
           <p class="eyebrow">Arcana Navigator</p>
-          <h1>Навигатор раскладов Таро</h1>
-          <p class="lead">Выберите расклад, позицию и карту. Сначала — фраза для живого чтения, детали — ниже.</p>
+          <h1>Навигатор раскладов</h1>
+          <p class="lead">Выберите карту и получите фразу для чтения.</p>
+          <details class="hero-details">
+            <summary>Что это?</summary>
+            <p>Справочный навигатор для чтения физических раскладов Таро: без генерации карт, аккаунтов и сохранения истории.</p>
+          </details>
         </div>
         <div class="hero-note">
           <span>Справочный режим</span>
@@ -134,35 +138,33 @@ function renderQuickMode() {
   });
 
   return `
-    <section class="layout">
-      <div class="workbench">
-        <section class="panel quick-panel" aria-labelledby="quick-title">
-          <div class="section-head">
-            <p class="eyebrow">Быстрый режим</p>
-            <h2 id="quick-title">Быстрый разбор карты</h2>
-          </div>
-          ${renderQuickControls(spread)}
-        </section>
-
-        <section class="panel spreads-panel" aria-labelledby="spreads-title">
-          <div class="section-head">
-            <p class="eyebrow">Расклад</p>
-            <h2 id="spreads-title">Позиции выбранного расклада</h2>
-            <p>${spread.description}</p>
-          </div>
-          <div class="position-grid">
-            ${spread.positions.map((item) => renderQuickPositionCard(item.id, item.title, item.description, item.optional)).join("")}
-          </div>
-        </section>
-
-        ${renderReference()}
-      </div>
+    <section class="layout quick-reading-layout">
+      <section class="panel quick-panel" aria-labelledby="quick-title">
+        <div class="section-head">
+          <p class="eyebrow">Быстрый режим</p>
+          <h2 id="quick-title">Быстрый разбор карты</h2>
+        </div>
+        ${renderQuickControls(spread)}
+      </section>
 
       <aside class="panel result-panel" aria-labelledby="result-title">
         <div class="sticky-result">
           ${renderReadingResult(reading, `${reading.spreadTitle} · ${reading.questionTitle} · ${reading.positionTitle} · ${orientationLabel(state.quick.orientation)}`)}
         </div>
       </aside>
+
+      <section class="panel spreads-panel" aria-labelledby="spreads-title">
+        <div class="section-head">
+          <p class="eyebrow">Расклад</p>
+          <h2 id="spreads-title">Позиции выбранного расклада</h2>
+          <p>${spread.description}</p>
+        </div>
+        <div class="position-grid">
+          ${spread.positions.map((item) => renderQuickPositionCard(item.id, item.title, item.description, item.optional)).join("")}
+        </div>
+      </section>
+
+      ${renderReference(true)}
     </section>
   `;
 }
@@ -185,6 +187,8 @@ function renderSessionMode() {
           ${renderSessionControls(layout)}
         </section>
 
+        ${renderSessionMiniBar(activePosition)}
+
         <section class="panel spreads-panel" aria-labelledby="session-positions-title">
           <div class="section-head">
             <p class="eyebrow">Позиции</p>
@@ -198,7 +202,7 @@ function renderSessionMode() {
 
       </div>
 
-      <aside class="panel result-panel" aria-labelledby="session-result-title">
+      <aside class="panel result-panel" aria-labelledby="session-result-title" id="session-reading-result">
         <div class="sticky-result">
           <p class="eyebrow">${summary.title}</p>
           <h2 id="session-result-title">${summary.filledCount}/${summary.totalCount} позиций</h2>
@@ -436,11 +440,27 @@ function renderInlineSessionPicker(
   `;
 }
 
+function renderSessionMiniBar(activePosition: SpreadLayout["positions"][number]) {
+  const selection = state.session.cardsByPosition[activePosition.id];
+  const cardName = selection ? cardLabel(selection.card) : "карта не выбрана";
+
+  return `
+    <div class="session-mini-bar" aria-label="Активный контекст расклада">
+      <span><strong>Активно:</strong> ${activePosition.title} · ${cardName}</span>
+      <button type="button" data-session-scroll-result>К чтению</button>
+    </div>
+  `;
+}
+
 function renderReadingResult(reading: ReturnType<typeof composeReading>, selectionLine: string) {
   return `
-    <p class="eyebrow">Текущий выбор</p>
+    <p class="eyebrow">Что сказать</p>
     <h2 id="result-title">${reading.cardName}</h2>
     <p class="selection-line">${selectionLine}</p>
+    <div class="reading-block phrase-block">
+      <h3>Фраза</h3>
+      <p>${firstPhrase(reading)}</p>
+    </div>
     <div class="reading-block">
       <h3>Суть</h3>
       <p>${compactSense(reading)}</p>
@@ -448,10 +468,6 @@ function renderReadingResult(reading: ReturnType<typeof composeReading>, selecti
     <div class="reading-block">
       <h3>Глаголы</h3>
       <div class="chips">${reading.verbs.slice(0, 6).map((verb) => `<span>${verb}</span>`).join("")}</div>
-    </div>
-    <div class="reading-block phrase-block">
-      <h3>Фраза</h3>
-      <p>${firstPhrase(reading)}</p>
     </div>
     <details class="compact-details">
       <summary>Подробнее</summary>
@@ -523,8 +539,8 @@ function renderOpenCardsEssence(
   `;
 }
 
-function renderReference() {
-  return `
+function renderReference(collapsed = false) {
+  const reference = `
     <section class="reference-grid" aria-label="Справочник карт">
       <details class="panel reference-panel" open>
         <summary>Типы вопросов</summary>
@@ -644,6 +660,17 @@ function renderReference() {
         </div>
       </details>
     </section>
+  `;
+
+  if (!collapsed) {
+    return reference;
+  }
+
+  return `
+    <details class="panel reference-shell">
+      <summary>Справочник карт</summary>
+      ${reference}
+    </details>
   `;
 }
 
@@ -809,6 +836,12 @@ function wireSessionEvents() {
     button.addEventListener("click", () => {
       state.session = clearSession(state.session);
       render();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-session-scroll-result]").forEach((button) => {
+    button.addEventListener("click", () => {
+      app.querySelector<HTMLElement>("#session-reading-result")?.scrollIntoView({ block: "start" });
     });
   });
 

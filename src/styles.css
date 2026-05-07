@@ -53,10 +53,10 @@ button {
 
 .hero {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   align-items: end;
   min-width: 0;
-  padding: 18px 0 14px;
+  padding: 10px 0 10px;
 }
 
 .eyebrow {
@@ -78,7 +78,7 @@ p {
 h1 {
   margin: 0;
   color: var(--gold);
-  font-size: clamp(2rem, 2.4rem, 2.4rem);
+  font-size: clamp(1.7rem, 2.2rem, 2.2rem);
   line-height: 1.08;
   letter-spacing: 0;
 }
@@ -104,8 +104,24 @@ p {
 
 .lead {
   max-width: 62ch;
-  margin-top: 10px;
+  margin-top: 6px;
   color: var(--muted);
+}
+
+.hero-details {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.hero-details summary {
+  cursor: pointer;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.hero-details p {
+  margin-top: 6px;
 }
 
 .hero-note {
@@ -136,6 +152,10 @@ p {
   display: grid;
   gap: 14px;
   min-width: 0;
+}
+
+.quick-reading-layout {
+  align-items: start;
 }
 
 .mode-tabs {
@@ -473,6 +493,47 @@ select {
   line-height: 1;
 }
 
+.session-mini-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  border: 1px solid rgba(230, 201, 106, 0.42);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: rgba(12, 15, 10, 0.96);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.session-mini-bar span {
+  min-width: 0;
+  color: #eaf5da;
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-mini-bar strong {
+  color: var(--gold);
+}
+
+.session-mini-bar button {
+  flex: 0 0 auto;
+  min-width: 0;
+  border: 1px solid rgba(230, 201, 106, 0.68);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: rgba(230, 201, 106, 0.14);
+  color: var(--gold);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
 .session-reading,
 .empty-note {
   min-width: 0;
@@ -503,6 +564,7 @@ select {
 .sticky-result {
   display: grid;
   gap: 14px;
+  scroll-margin-top: 58px;
 }
 
 .reading-block {
@@ -675,6 +737,20 @@ select {
   color: var(--muted);
 }
 
+.reference-shell {
+  padding: 12px;
+}
+
+.reference-shell > summary {
+  cursor: pointer;
+  color: var(--gold);
+  font-weight: 900;
+}
+
+.reference-shell .reference-grid {
+  margin-top: 12px;
+}
+
 dl {
   display: grid;
   gap: 6px;
@@ -696,6 +772,11 @@ dd {
 @media (min-width: 620px) {
   .hero {
     grid-template-columns: minmax(0, 1fr) auto;
+    padding: 18px 0 14px;
+  }
+
+  h1 {
+    font-size: 2.4rem;
   }
 
   .mode-tabs {
@@ -721,6 +802,21 @@ dd {
   .layout {
     grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
     align-items: start;
+  }
+
+  .quick-reading-layout .quick-panel,
+  .quick-reading-layout .spreads-panel,
+  .quick-reading-layout .reference-shell {
+    grid-column: 1;
+  }
+
+  .quick-reading-layout .result-panel {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+
+  .session-mini-bar {
+    display: none;
   }
 
   .sticky-result {
