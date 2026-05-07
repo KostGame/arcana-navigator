@@ -160,6 +160,8 @@ describe("spread session state", () => {
     expect(summary.focus.length).toBeGreaterThan(0);
     expect(summary.line).toHaveLength(2);
     expect(summary.speechPhrase.length).toBeGreaterThan(0);
+    expect(summary.speechPhrase).toContain(readings[0].reading.shortMeaning);
+    expect(summary.speechPhrase).not.toContain("Похоже, сейчас главная тема");
     expect(summary.text).not.toContain(readings[0].reading.summary);
     expect(summary.text.length).toBeLessThan(700);
   });

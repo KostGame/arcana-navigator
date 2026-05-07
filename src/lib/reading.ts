@@ -9,6 +9,7 @@ import type { QuestionTypeId, ReadingInput, ReadingResult } from "../types";
 
 interface ReadingOverride {
   summary: string;
+  shortMeaning?: string;
   verbs?: string[];
   phrases?: string[];
   attention?: string;
@@ -19,6 +20,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "career:career-energy:career:minor:cups:ten": {
     summary:
       "10 Кубков в этой позиции можно читать так: тебя оживляет работа с людьми, ощущение своего круга, эмоциональная отдача и чувство, что результат радует не только тебя.",
+    shortMeaning: "работа с людьми, свой круг и эмоциональная отдача",
     verbs: ["объединять", "поддерживать", "радовать", "сближать"],
     phrases: [
       "Тебя оживляет работа с людьми и ощущение своего круга.",
@@ -31,6 +33,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "two-options:two-risk:choice:minor:cups:ten": {
     summary:
       "10 Кубков в позиции риска говорит, что можно идеализировать красивую картинку, ожидать идеального результата и не заметить практические детали.",
+    shortMeaning: "идеальная картинка вместо практических деталей",
     verbs: ["идеализировать", "ожидать", "сравнивать", "проверять"],
     phrases: [
       "Риск в том, что красивая картинка может выглядеть убедительнее фактов.",
@@ -43,6 +46,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "*:*:relationships:major:moon": {
     summary:
       "Луна в вопросе отношений показывает скрытые чувства, страхи, неясность, фантазии и необходимость бережного прояснения.",
+    shortMeaning: "скрытые чувства, страхи и неясность",
     verbs: ["чувствовать", "прояснять", "замечать", "проверять"],
     phrases: [
       "В отношениях Луна говорит о неясности и скрытом эмоциональном слое.",
@@ -55,6 +59,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "*:*:career:major:moon": {
     summary:
       "Луна в вопросе профессии указывает на работу с неочевидным: диагностику, психологию, исследование, творчество и скрытые мотивы.",
+    shortMeaning: "диагностика, творчество и скрытые мотивы",
     verbs: ["исследовать", "диагностировать", "чувствовать", "раскрывать"],
     phrases: [
       "В работе Луна может говорить о задачах, где нужно видеть скрытый слой.",
@@ -67,6 +72,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "*:*:forecast:major:moon": {
     summary:
       "Луна в вопросе прогноза говорит: пока не всё видно, условия могут быть туманными, и окончательный вывод лучше не делать слишком рано.",
+    shortMeaning: "туманные условия и ранний вывод",
     verbs: ["проясняться", "ждать", "проверять", "наблюдать"],
     phrases: [
       "В прогнозе Луна показывает период тумана и неполной информации.",
@@ -79,6 +85,7 @@ const readingOverrides: Record<string, ReadingOverride> = {
   "*:*:relationships:minor:cups:ten": {
     summary:
       "10 Кубков в вопросе отношений можно читать как гармонию, близость, образ семьи, эмоциональную полноту и желание быть своим кругом.",
+    shortMeaning: "гармония, близость и образ семьи",
     verbs: ["сближаться", "радоваться", "объединять", "поддерживать"],
     phrases: [
       "В отношениях 10 Кубков говорит о стремлении к гармонии и эмоциональной полноте.",
@@ -88,6 +95,16 @@ const readingOverrides: Record<string, ReadingOverride> = {
     attention: "проверь, это живое чувство близости или ожидание идеальной картинки",
     avoid: "не обещай вечную гармонию без разговора, выбора и реальных действий",
   },
+};
+
+const minorShortMeanings: Partial<Record<string, string>> = {
+  "cups:eight": "уход от того, что не наполняет",
+  "cups:ten": "эмоциональная полнота и свой круг",
+  "cups:seven": "варианты, фантазии и риск распыления",
+};
+
+const courtShortMeanings: Partial<Record<string, string>> = {
+  "pentacles:page": "практический шаг, навык и обучение",
 };
 
 export function composeReading(input: ReadingInput): ReadingResult {
@@ -142,6 +159,7 @@ export function composeReading(input: ReadingInput): ReadingResult {
 
   return {
     cardName: cardBase.cardName,
+    shortMeaning: override?.shortMeaning ?? cardBase.shortMeaning,
     spreadTitle: spread.title,
     questionTitle: questionType.title,
     positionTitle: position.title,
@@ -170,6 +188,8 @@ function buildCardReading(input: ReadingInput, questionTypeId: QuestionTypeId) {
 
     return {
       cardName,
+      shortMeaning:
+        minorShortMeanings[`${suit.id}:${rank.id}`] ?? `${rank.shortMeaning} через ${suit.shortMeaning.toLowerCase()}`,
       verbs: [...suit.verbs, ...rank.verbs],
       summary:
         `${cardName} соединяет сферу «${suit.base}» и стадию «${rank.key}». ` +
@@ -190,6 +210,8 @@ function buildCardReading(input: ReadingInput, questionTypeId: QuestionTypeId) {
 
     return {
       cardName,
+      shortMeaning:
+        courtShortMeanings[`${suit.id}:${court.id}`] ?? `${court.shortMeaning} в теме ${suit.shortMeaning.toLowerCase()}`,
       verbs: [...suit.verbs, ...court.verbs],
       summary:
         `${cardName} соединяет масть «${suit.name}» и роль «${court.role}». ` +
@@ -206,6 +228,7 @@ function buildCardReading(input: ReadingInput, questionTypeId: QuestionTypeId) {
 
   return {
     cardName: `${major.number} ${major.name}`,
+    shortMeaning: major.shortMeaning,
     verbs: major.verbs,
     summary:
       `${major.name} — архетип «${major.archetype}». ` +

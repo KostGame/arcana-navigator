@@ -63,10 +63,25 @@ describe("composeReading", () => {
     });
 
     expect(reading.cardName).toBe("10 Кубков");
+    expect(reading.shortMeaning).toContain("гармония");
+    expect(reading.shortMeaning).toContain("близость");
     expect(reading.summary).toContain("гармонию");
     expect(reading.summary).toContain("близость");
     expect(reading.summary).toContain("образ семьи");
     expect(reading.summary).toContain("эмоциональную полноту");
+  });
+
+  it("returns the base short meaning for 10 Cups", () => {
+    const reading = composeReading({
+      spreadId: "three-advice",
+      questionTypeId: "diagnosis",
+      positionId: "three-situation",
+      orientation: "upright",
+      card: { type: "minor", suitId: "cups", rankId: "ten" },
+    });
+
+    expect(reading.shortMeaning).toContain("эмоциональная полнота");
+    expect(reading.shortMeaning).toContain("свой круг");
   });
 
   it("reads 10 Cups as choice risk through idealization and practical details", () => {
@@ -95,9 +110,35 @@ describe("composeReading", () => {
     });
 
     expect(reading.cardName).toBe("10 Кубков");
+    expect(reading.shortMeaning).toContain("работа с людьми");
+    expect(reading.shortMeaning).toContain("свой круг");
     expect(reading.summary).toContain("работа с людьми");
     expect(reading.summary).toContain("ощущение своего круга");
     expect(reading.summary).toContain("эмоциональная отдача");
+  });
+
+  it("returns structured short meanings for key cards", () => {
+    const devil = composeReading({
+      spreadId: "three-advice",
+      questionTypeId: "diagnosis",
+      positionId: "three-situation",
+      orientation: "upright",
+      card: { type: "major", majorId: "devil" },
+    });
+    const pagePentacles = composeReading({
+      spreadId: "three-advice",
+      questionTypeId: "diagnosis",
+      positionId: "three-influence",
+      orientation: "upright",
+      card: { type: "court", suitId: "pentacles", courtId: "page" },
+    });
+
+    expect(devil.shortMeaning).toContain("желание");
+    expect(devil.shortMeaning).toContain("привязка");
+    expect(devil.shortMeaning).toContain("сильный стимул");
+    expect(pagePentacles.shortMeaning).toContain("практический шаг");
+    expect(pagePentacles.shortMeaning).toContain("навык");
+    expect(pagePentacles.shortMeaning).toContain("обучение");
   });
 });
 
@@ -117,6 +158,20 @@ describe("data integrity", () => {
         expect(position.title.length).toBeGreaterThan(0);
         expect(position.description.length).toBeGreaterThan(10);
       }
+    }
+  });
+
+  it("has short meanings for core card data", async () => {
+    const [{ suits }, { ranks }, { courtCards }, { majors }] = await Promise.all([
+      import("../data/suits"),
+      import("../data/ranks"),
+      import("../data/court"),
+      import("../data/majors"),
+    ]);
+
+    for (const item of [...suits, ...ranks, ...courtCards, ...majors]) {
+      expect(item.shortMeaning.length).toBeGreaterThan(8);
+      expect(item.shortMeaning.split(/\s+/u).length).toBeLessThanOrEqual(8);
     }
   });
 
