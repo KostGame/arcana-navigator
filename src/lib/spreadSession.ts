@@ -199,10 +199,10 @@ export function composeSpreadSummary(session: SpreadSession): SpreadSummary {
 
   const focus = readings.flatMap((item) => item.reading.verbs.slice(0, 2)).filter(unique).slice(0, 8);
   const line = readings.map((item) => `${item.positionTitle} — ${item.reading.cardName}`);
-  const speechPhrase = readings[0]?.reading.phrases[0] ?? "Начните с первой выбранной карты.";
+  const speechPhrase = buildSpeechPhrase(readings);
   const adviceReading = readings.find((item) => layout.positions.find((position) => position.id === item.positionId)?.role === "advice");
   const advice = adviceReading
-    ? `${adviceReading.reading.cardName}: ${adviceReading.reading.phrases[0] ?? adviceReading.reading.summary}`
+    ? `${adviceReading.reading.cardName}: ${adviceReading.reading.shortMeaning}`
     : undefined;
   const text = `Заполнено: ${filledRequired.length}/${totalCount}. Линия: ${line.join(" · ")}. Акцент: ${focus.slice(0, 5).join(", ")}. Фраза: ${speechPhrase}${advice ? ` Совет: ${advice}` : ""}`;
 
@@ -234,4 +234,13 @@ function requireLayout(layoutId: SpreadLayoutId): SpreadLayout {
 
 function unique(value: string, index: number, array: string[]) {
   return array.indexOf(value) === index;
+}
+
+function buildSpeechPhrase(readings: SpreadSessionPositionReading[]) {
+  const firstThree = readings.slice(0, 3);
+  const line = firstThree
+    .map((item) => `${item.positionTitle.toLowerCase()} — ${item.reading.shortMeaning}`)
+    .join("; ");
+
+  return `Расклад показывает: ${line}.`;
 }

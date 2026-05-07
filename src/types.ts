@@ -108,6 +108,7 @@ export interface SuitMeaning {
   id: SuitId;
   name: string;
   genitive: string;
+  shortMeaning: string;
   base: string;
   verbs: string[];
   plus: string;
@@ -121,6 +122,7 @@ export interface RankMeaning {
   id: RankId;
   label: string;
   key: string;
+  shortMeaning: string;
   stage: string;
   verbs: string[];
   energy: string;
@@ -132,6 +134,7 @@ export interface RankMeaning {
 export interface CourtMeaning {
   id: CourtId;
   name: string;
+  shortMeaning: string;
   role: string;
   maturity: string;
   verbs: string[];
@@ -145,6 +148,7 @@ export interface MajorArcana {
   id: MajorId;
   number: string;
   name: string;
+  shortMeaning: string;
   archetype: string;
   verbs: string[];
   plus: string;
@@ -186,6 +190,7 @@ export interface ReadingInput {
 
 export interface ReadingResult {
   cardName: string;
+  shortMeaning: string;
   spreadTitle: string;
   questionTitle: string;
   positionTitle: string;

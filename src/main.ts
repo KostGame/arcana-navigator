@@ -648,19 +648,11 @@ function renderReference() {
 }
 
 function compactSense(reading: ReturnType<typeof composeReading>) {
-  return compactText(reading.phrases[0]?.replace(/[.。]$/u, "") ?? reading.summary, 16);
+  return compactText(reading.shortMeaning, 16);
 }
 
 function readingShortMeaning(reading: ReturnType<typeof composeReading>) {
-  const fragments = reading.parts.map(coreFragment).filter(uniqueText).slice(0, 2);
-  const verbs = reading.verbs.slice(0, 3);
-  return compactText([...fragments, ...verbs].filter(uniqueText).join(", "), 18);
-}
-
-function coreFragment(part: string) {
-  const afterDash = part.includes("—") ? part.slice(part.indexOf("—") + 1) : part;
-  const withoutLead = afterDash.replace(/^[^:]+:\s*/u, "");
-  return stripFinalPeriod(withoutLead.split(/[.!?]/u)[0]?.trim() ?? "");
+  return compactText(reading.shortMeaning, 18);
 }
 
 function spreadSpeechPhrase(
@@ -680,24 +672,18 @@ function spreadSpeechPhrase(
     return `Расклад начинает с позиции «${first.positionTitle}»: ${readingShortMeaning(first.reading)}.${focusLine}`;
   }
 
-  return `Расклад связывает «${first.positionTitle}» (${readingShortMeaning(first.reading)}) и «${last.positionTitle}» (${readingShortMeaning(last.reading)}).${focusLine}`;
+  const middle = readings[1];
+  const middleLine = middle ? `, а «${middle.positionTitle}» добавляет ${readingShortMeaning(middle.reading)}` : "";
+  return `Расклад показывает: «${first.positionTitle}» — ${readingShortMeaning(first.reading)}${middleLine}; «${last.positionTitle}» — ${readingShortMeaning(last.reading)}.${focusLine}`;
 }
 
 function firstPhrase(reading: ReturnType<typeof composeReading>) {
   return reading.phrases[0] ?? reading.summary;
 }
 
-function stripFinalPeriod(text: string) {
-  return text.replace(/[.。]$/u, "");
-}
-
 function compactText(text: string, maxWords: number) {
   const words = text.split(/\s+/u).filter(Boolean);
   return words.length > maxWords ? `${words.slice(0, maxWords).join(" ")}...` : text;
-}
-
-function uniqueText(value: string, index: number, array: string[]) {
-  return value.length > 0 && array.indexOf(value) === index;
 }
 
 function wireEvents() {
