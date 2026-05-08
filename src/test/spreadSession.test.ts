@@ -8,6 +8,8 @@ import {
   composeSpreadSummary,
   createSpreadSession,
   editPosition,
+  findNextAvailablePositionId,
+  selectCardForAvailablePosition,
   selectCardForActivePosition,
   setActivePosition,
 } from "../lib/spreadSession";
@@ -72,6 +74,37 @@ describe("spread session state", () => {
     const blocked = selectCardForActivePosition(activeAgain, moon);
 
     expect(blocked.cardsByPosition["three-situation"]).toEqual(tenCups);
+  });
+
+  it("adds a reference card to the active empty position", () => {
+    const session = selectCardForAvailablePosition(createSpreadSession("three-advice"), moon);
+
+    expect(session.cardsByPosition["three-situation"]).toEqual(moon);
+    expect(session.activePositionId).toBe("three-influence");
+  });
+
+  it("adds a reference card to the next empty position when active is filled", () => {
+    const withCard = selectCardForActivePosition(createSpreadSession("three-advice"), tenCups);
+    const activeAgain = setActivePosition(withCard, "three-situation");
+    const updated = selectCardForAvailablePosition(activeAgain, moon);
+
+    expect(updated.cardsByPosition["three-situation"]).toEqual(tenCups);
+    expect(updated.cardsByPosition["three-influence"]).toEqual(moon);
+    expect(updated.activePositionId).toBe("three-direction");
+  });
+
+  it("does not overwrite existing cards when every position is filled from reference", () => {
+    let session = createSpreadSession("past-present-future");
+
+    session = selectCardForAvailablePosition(session, tenCups);
+    session = selectCardForAvailablePosition(session, moon);
+    session = selectCardForAvailablePosition(session, sevenSwords);
+
+    const snapshot = session.cardsByPosition;
+    const blocked = selectCardForAvailablePosition(session, defaultEightCups);
+
+    expect(findNextAvailablePositionId(session)).toBeUndefined();
+    expect(blocked.cardsByPosition).toEqual(snapshot);
   });
 
   it("allows replacing a card after editPosition", () => {

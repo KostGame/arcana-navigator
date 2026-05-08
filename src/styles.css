@@ -797,6 +797,43 @@ input::placeholder {
   color: var(--gold);
 }
 
+.reference-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  border: 1px solid rgba(230, 201, 106, 0.46);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(230, 201, 106, 0.1);
+  color: #f2ebd5;
+  font-size: 0.9rem;
+}
+
+.reference-status.is-warning {
+  border-color: rgba(214, 119, 119, 0.52);
+  background: rgba(214, 119, 119, 0.1);
+}
+
+.reference-status span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.reference-status button,
+.reference-add-button {
+  min-width: 0;
+  border: 1px solid rgba(230, 201, 106, 0.68);
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: rgba(230, 201, 106, 0.14);
+  color: var(--gold);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
 .reference-results {
   display: grid;
   gap: 10px;
@@ -828,6 +865,10 @@ input::placeholder {
 
 .reference-entry strong {
   color: var(--gold);
+}
+
+.reference-add-button {
+  justify-self: start;
 }
 
 dl {

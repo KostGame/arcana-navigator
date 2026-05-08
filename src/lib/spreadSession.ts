@@ -131,6 +131,42 @@ export function changeSessionLayout(
   };
 }
 
+export function findNextAvailablePositionId(session: SpreadSession): string | undefined {
+  const layout = requireLayout(session.layoutId);
+
+  if (!session.cardsByPosition[session.activePositionId]) {
+    return session.activePositionId;
+  }
+
+  const currentIndex = layout.positions.findIndex((position) => position.id === session.activePositionId);
+  const positionsAfterCurrent = currentIndex >= 0 ? layout.positions.slice(currentIndex + 1) : layout.positions;
+
+  return (
+    positionsAfterCurrent.find((position) => !session.cardsByPosition[position.id]) ??
+    layout.positions.find((position) => !session.cardsByPosition[position.id])
+  )?.id;
+}
+
+export function selectCardForAvailablePosition(
+  session: SpreadSession,
+  selection: PositionCardSelection,
+): SpreadSession {
+  const targetPositionId = findNextAvailablePositionId(session);
+
+  if (!targetPositionId) {
+    return session;
+  }
+
+  return selectCardForActivePosition(
+    {
+      ...session,
+      activePositionId: targetPositionId,
+      editingPositionId: undefined,
+    },
+    selection,
+  );
+}
+
 export function moveToNextEmptyPosition(session: SpreadSession): SpreadSession {
   const layout = requireLayout(session.layoutId);
   const currentIndex = layout.positions.findIndex((position) => position.id === session.activePositionId);
