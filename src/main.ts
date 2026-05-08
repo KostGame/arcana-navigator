@@ -5,6 +5,7 @@ import { questionTypes } from "./data/questionTypes";
 import { ranks } from "./data/ranks";
 import { spreadLayouts } from "./data/spreadLayouts";
 import { suits } from "./data/suits";
+import { buildCardReferenceEntries, cardReferenceFilters, filterCardReferenceEntries } from "./lib/cardReference";
 import { composeReading } from "./lib/reading";
 import {
   cancelEditPosition,
@@ -34,9 +35,12 @@ import type {
   SpreadSession,
   SuitId,
 } from "./types";
+import type { CardReferenceEntry } from "./lib/cardReference";
 
-type AppMode = "quick" | "session";
+type AppMode = "quick" | "session" | "reference";
 type PickerCommitMode = "none" | "card" | "orientation";
+
+type ReferenceFilter = (typeof cardReferenceFilters)[number]["id"];
 
 interface CardPickerState {
   cardKind: CardKind;
@@ -58,6 +62,10 @@ interface AppState {
   quick: QuickState;
   session: SpreadSession;
   sessionPicker: CardPickerState;
+  reference: {
+    filter: ReferenceFilter;
+    query: string;
+  };
 }
 
 const defaultPicker: CardPickerState = {
@@ -79,7 +87,13 @@ const state: AppState = {
   },
   session: createSpreadSession("three-advice"),
   sessionPicker: { ...defaultPicker },
+  reference: {
+    filter: "all",
+    query: "",
+  },
 };
+
+const cardReferenceEntries = buildCardReferenceEntries();
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
 
@@ -117,14 +131,56 @@ function render() {
       <nav class="mode-tabs" aria-label="Режим работы">
         <button class="${state.mode === "quick" ? "is-active" : ""}" type="button" data-mode="quick">Быстрый разбор</button>
         <button class="${state.mode === "session" ? "is-active" : ""}" type="button" data-mode="session">Собрать расклад</button>
+        <button class="${state.mode === "reference" ? "is-active" : ""}" type="button" data-mode="reference">Справочник карт</button>
       </nav>
 
-      ${state.mode === "quick" ? renderQuickMode() : renderSessionMode()}
+      ${state.mode === "quick" ? renderQuickMode() : state.mode === "session" ? renderSessionMode() : renderCardReferenceMode()}
     </main>
   `;
 
   wireEvents();
   scrollPendingPositionIntoView();
+}
+
+function renderCardReferenceMode() {
+  const entries = filterCardReferenceEntries(cardReferenceEntries, state.reference.filter, state.reference.query);
+  const majorCount = entries.filter((entry) => entry.kind === "major").length;
+  const cardCount = entries.filter((entry) => entry.kind === "major" || entry.kind === "minor" || entry.kind === "court").length;
+
+  return `
+    <section class="reference-screen">
+      <section class="panel reference-workbench" aria-labelledby="card-reference-title">
+        <div class="section-head">
+          <p class="eyebrow">Справочник</p>
+          <h2 id="card-reference-title">Справочник карт</h2>
+          <p>Найдите карту, короткую суть и глаголы для устного чтения.</p>
+        </div>
+
+        <label class="reference-search">
+          <span>Поиск</span>
+          <input type="search" value="${escapeHtml(state.reference.query)}" placeholder="Найти карту или смысл..." data-reference-search>
+        </label>
+
+        <div class="reference-filter" aria-label="Фильтр справочника">
+          ${cardReferenceFilters
+            .map(
+              (filter) => `
+                <button class="${state.reference.filter === filter.id ? "is-active" : ""}" type="button" data-reference-filter="${filter.id}">
+                  ${filter.label}
+                </button>
+              `,
+            )
+            .join("")}
+        </div>
+
+        <p class="selection-line">Найдено: ${entries.length}. Карт: ${cardCount}. Старших: ${majorCount}.</p>
+
+        <div class="reference-results">
+          ${entries.length > 0 ? entries.map(renderCardReferenceEntry).join("") : `<div class="empty-note">Ничего не найдено. Попробуйте другой запрос.</div>`}
+        </div>
+      </section>
+    </section>
+  `;
 }
 
 function renderQuickMode() {
@@ -539,6 +595,48 @@ function renderOpenCardsEssence(
   `;
 }
 
+function renderCardReferenceEntry(entry: CardReferenceEntry) {
+  return `
+    <article class="reference-entry">
+      <div class="reference-entry-head">
+        <p class="eyebrow">${referenceKindLabel(entry.kind)}</p>
+        <h3>${entry.title}</h3>
+      </div>
+      <p><strong>Суть:</strong> ${entry.shortMeaning}</p>
+      <p class="verb-line"><strong>Глаголы:</strong> ${entry.verbs.slice(0, 5).join(" · ")}</p>
+      <details class="compact-details">
+        <summary>Подробнее</summary>
+        <div class="details-stack">
+          <h3>Полный смысл</h3>
+          <p>${entry.summary}</p>
+          ${entry.archetype ? `<h3>Архетип</h3><p>${entry.archetype}</p>` : ""}
+          ${entry.stage ? `<h3>Стадия</h3><p>${entry.stage}</p>` : ""}
+          ${entry.plus ? `<h3>Плюс</h3><p>${entry.plus}</p>` : ""}
+          ${entry.minus ? `<h3>Минус</h3><p>${entry.minus}</p>` : ""}
+          ${entry.advice ? `<h3>Совет</h3><p>${entry.advice}</p>` : ""}
+          ${entry.attention ? `<h3>Внимание</h3><p>${entry.attention}</p>` : ""}
+          ${entry.avoid ? `<h3>Анти-трактовка</h3><p>${entry.avoid}</p>` : ""}
+          ${entry.build ? `<h3>Как собрано значение</h3><p>${entry.build}</p>` : ""}
+          <h3>Связанные глаголы</h3>
+          <p>${entry.verbs.join(" · ")}</p>
+        </div>
+      </details>
+    </article>
+  `;
+}
+
+function referenceKindLabel(kind: CardReferenceEntry["kind"]) {
+  const labels: Record<CardReferenceEntry["kind"], string> = {
+    major: "Старший аркан",
+    minor: "Младшая карта",
+    court: "Придворная карта",
+    suit: "Масть",
+    rank: "Достоинство",
+  };
+
+  return labels[kind];
+}
+
 function renderReference(collapsed = false) {
   const reference = `
     <section class="reference-grid" aria-label="Справочник карт">
@@ -713,6 +811,14 @@ function compactText(text: string, maxWords: number) {
   return words.length > maxWords ? `${words.slice(0, maxWords).join(" ")}...` : text;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;");
+}
+
 function wireEvents() {
   app.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -723,6 +829,7 @@ function wireEvents() {
 
   wireQuickEvents();
   wireSessionEvents();
+  wireReferenceEvents();
 }
 
 function wireQuickEvents() {
@@ -857,6 +964,22 @@ function wireSessionEvents() {
       const control = select.dataset.sessionPicker;
       updatePicker(state.sessionPicker, control, select.value);
       commitSessionPicker(control === "orientation" ? "orientation" : "card");
+    });
+  });
+}
+
+function wireReferenceEvents() {
+  app.querySelectorAll<HTMLInputElement>("input[data-reference-search]").forEach((input) => {
+    input.addEventListener("input", () => {
+      state.reference.query = input.value;
+      render();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-reference-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.reference.filter = (button.dataset.referenceFilter ?? "all") as ReferenceFilter;
+      render();
     });
   });
 }

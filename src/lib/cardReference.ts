@@ -1,0 +1,189 @@
+import { courtCards } from "../data/court";
+import { majors } from "../data/majors";
+import { ranks } from "../data/ranks";
+import { suits } from "../data/suits";
+import type { CourtMeaning, MajorArcana, RankMeaning, SuitMeaning } from "../types";
+
+export type CardReferenceFilter = "all" | "major" | "wands" | "cups" | "swords" | "pentacles" | "court";
+export type CardReferenceKind = "major" | "minor" | "court" | "suit" | "rank";
+
+export interface CardReferenceEntry {
+  id: string;
+  kind: CardReferenceKind;
+  filter: CardReferenceFilter;
+  title: string;
+  shortMeaning: string;
+  verbs: string[];
+  summary: string;
+  plus?: string;
+  minus?: string;
+  advice?: string;
+  attention?: string;
+  avoid?: string;
+  build?: string;
+  archetype?: string;
+  stage?: string;
+}
+
+const minorShortMeanings: Partial<Record<string, string>> = {
+  "cups:eight": "уход от того, что не наполняет",
+  "cups:ten": "эмоциональная полнота и свой круг",
+  "cups:seven": "варианты, фантазии и риск распыления",
+};
+
+const courtShortMeanings: Partial<Record<string, string>> = {
+  "pentacles:page": "практический шаг, навык и обучение",
+};
+
+export const cardReferenceFilters: Array<{ id: CardReferenceFilter; label: string }> = [
+  { id: "all", label: "Все" },
+  { id: "major", label: "Старшие" },
+  { id: "wands", label: "Жезлы" },
+  { id: "cups", label: "Кубки" },
+  { id: "swords", label: "Мечи" },
+  { id: "pentacles", label: "Пентакли" },
+  { id: "court", label: "Двор" },
+];
+
+export function buildCardReferenceEntries(): CardReferenceEntry[] {
+  return [
+    ...majors.map(majorEntry),
+    ...suits.flatMap((suit) => ranks.map((rank) => minorEntry(suit, rank))),
+    ...suits.flatMap((suit) => courtCards.map((court) => courtEntry(suit, court))),
+    ...suits.map(suitEntry),
+    ...ranks.map(rankEntry),
+  ];
+}
+
+export function filterCardReferenceEntries(
+  entries: CardReferenceEntry[],
+  filter: CardReferenceFilter,
+  query: string,
+) {
+  const normalizedQuery = normalize(query);
+
+  return entries.filter((entry) => {
+    const matchesFilter = filter === "all" || entry.filter === filter;
+    const matchesQuery = !normalizedQuery || searchText(entry).includes(normalizedQuery);
+    return matchesFilter && matchesQuery;
+  });
+}
+
+function majorEntry(major: MajorArcana): CardReferenceEntry {
+  return {
+    id: `major-${major.id}`,
+    kind: "major",
+    filter: "major",
+    title: `${major.number} ${major.name}`,
+    shortMeaning: major.shortMeaning,
+    verbs: major.verbs,
+    summary: `${major.name} — ${major.archetype}. В плюсе: ${major.plus}. В минусе: ${major.minus}.`,
+    plus: major.plus,
+    minus: major.minus,
+    advice: major.advice,
+    attention: major.energy,
+    avoid: major.obstacle,
+    archetype: major.archetype,
+  };
+}
+
+function minorEntry(suit: SuitMeaning, rank: RankMeaning): CardReferenceEntry {
+  const title = `${rank.label} ${suit.genitive}`;
+
+  return {
+    id: `minor-${suit.id}-${rank.id}`,
+    kind: "minor",
+    filter: suit.id,
+    title,
+    shortMeaning: minorShortMeanings[`${suit.id}:${rank.id}`] ?? `${rank.shortMeaning} через ${suit.shortMeaning.toLowerCase()}`,
+    verbs: unique([...suit.verbs.slice(0, 3), ...rank.verbs]),
+    summary: `${title} соединяет масть «${suit.name}» и достоинство «${rank.label}».`,
+    plus: suit.plus,
+    minus: suit.minus,
+    advice: rank.advice,
+    attention: rank.energy,
+    avoid: rank.obstacle,
+    build: `Масть: ${suit.shortMeaning}. Достоинство: ${rank.shortMeaning}.`,
+  };
+}
+
+function courtEntry(suit: SuitMeaning, court: CourtMeaning): CardReferenceEntry {
+  const title = `${court.name} ${suit.genitive}`;
+
+  return {
+    id: `court-${suit.id}-${court.id}`,
+    kind: "court",
+    filter: "court",
+    title,
+    shortMeaning: courtShortMeanings[`${suit.id}:${court.id}`] ?? `${court.shortMeaning} в теме ${suit.shortMeaning.toLowerCase()}`,
+    verbs: unique([...court.verbs, ...suit.verbs.slice(0, 2)]),
+    summary: `${title} соединяет масть «${suit.name}» и роль «${court.name}».`,
+    plus: court.work,
+    minus: court.minus,
+    advice: court.advice,
+    attention: court.relationships,
+    avoid: "не сводить придворную карту только к конкретному человеку; это может быть роль, стиль поведения или качество",
+    build: `Масть: ${suit.shortMeaning}. Роль: ${court.role}.`,
+  };
+}
+
+function suitEntry(suit: SuitMeaning): CardReferenceEntry {
+  return {
+    id: `suit-${suit.id}`,
+    kind: "suit",
+    filter: suit.id,
+    title: suit.name,
+    shortMeaning: suit.shortMeaning,
+    verbs: suit.verbs,
+    summary: suit.base,
+    plus: suit.plus,
+    minus: suit.minus,
+    advice: suit.advice,
+    avoid: suit.risk,
+  };
+}
+
+function rankEntry(rank: RankMeaning): CardReferenceEntry {
+  return {
+    id: `rank-${rank.id}`,
+    kind: "rank",
+    filter: "all",
+    title: rank.label,
+    shortMeaning: rank.shortMeaning,
+    verbs: rank.verbs,
+    summary: rank.stage,
+    advice: rank.advice,
+    attention: rank.energy,
+    avoid: rank.obstacle,
+    stage: rank.stage,
+  };
+}
+
+function searchText(entry: CardReferenceEntry) {
+  return normalize(
+    [
+      entry.title,
+      entry.shortMeaning,
+      entry.summary,
+      entry.plus,
+      entry.minus,
+      entry.advice,
+      entry.attention,
+      entry.avoid,
+      entry.build,
+      entry.archetype,
+      entry.stage,
+      entry.verbs.join(" "),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function normalize(value: string) {
+  return value.trim().toLocaleLowerCase("ru-RU");
+}
+
+function unique(values: string[]) {
+  return [...new Set(values)];
+}
