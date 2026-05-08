@@ -52,9 +52,15 @@ describe("card reference", () => {
     const moon = filterCardReferenceEntries(entries, "major", "Луна");
     const cups = filterCardReferenceEntries(entries, "cups", "8");
     const court = filterCardReferenceEntries(entries, "court", "Паж Пентаклей");
+    const minor = filterCardReferenceEntries(entries, "minor", "8 Кубков");
+    const rankEight = filterCardReferenceEntries(entries, "rank-eight", "Кубков");
+    const page = filterCardReferenceEntries(entries, "court-page", "Пентаклей");
 
     expect(moon.map((entry) => entry.title)).toContain("XVIII Луна");
     expect(cups.map((entry) => entry.title)).toContain("8 Кубков");
     expect(court.map((entry) => entry.title)).toContain("Паж Пентаклей");
+    expect(minor.map((entry) => entry.title)).toContain("8 Кубков");
+    expect(rankEight.map((entry) => entry.title)).toContain("8 Кубков");
+    expect(page.map((entry) => entry.title)).toContain("Паж Пентаклей");
   });
 });
