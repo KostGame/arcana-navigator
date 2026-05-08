@@ -167,6 +167,27 @@ export function selectCardForAvailablePosition(
   );
 }
 
+export function selectCardForPosition(
+  session: SpreadSession,
+  positionId: string,
+  selection: PositionCardSelection,
+): SpreadSession {
+  const layout = requireLayout(session.layoutId);
+
+  if (!layout.positions.some((position) => position.id === positionId) || session.cardsByPosition[positionId]) {
+    return session;
+  }
+
+  return selectCardForActivePosition(
+    {
+      ...session,
+      activePositionId: positionId,
+      editingPositionId: undefined,
+    },
+    selection,
+  );
+}
+
 export function moveToNextEmptyPosition(session: SpreadSession): SpreadSession {
   const layout = requireLayout(session.layoutId);
   const currentIndex = layout.positions.findIndex((position) => position.id === session.activePositionId);

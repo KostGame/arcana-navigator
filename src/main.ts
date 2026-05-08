@@ -5,7 +5,12 @@ import { questionTypes } from "./data/questionTypes";
 import { ranks } from "./data/ranks";
 import { spreadLayouts } from "./data/spreadLayouts";
 import { suits } from "./data/suits";
-import { buildCardReferenceEntries, cardReferenceFilters, filterCardReferenceEntries } from "./lib/cardReference";
+import {
+  buildCardReferenceEntries,
+  cardReferenceFilterGroups,
+  cardReferenceFilters,
+  filterCardReferenceEntries,
+} from "./lib/cardReference";
 import { composeReading } from "./lib/reading";
 import {
   cancelEditPosition,
@@ -21,6 +26,7 @@ import {
   findNextAvailablePositionId,
   selectCardForAvailablePosition,
   selectCardForActivePosition,
+  selectCardForPosition,
   setActivePosition,
 } from "./lib/spreadSession";
 import type {
@@ -152,9 +158,12 @@ function renderCardReferenceMode() {
   const entries = filterCardReferenceEntries(cardReferenceEntries, state.reference.filter, state.reference.query);
   const majorCount = entries.filter((entry) => entry.kind === "major").length;
   const cardCount = entries.filter((entry) => entry.kind === "major" || entry.kind === "minor" || entry.kind === "court").length;
+  const layout = currentSessionLayout();
+  const activePosition = layout.positions.find((position) => position.id === state.session.activePositionId) ?? layout.positions[0];
 
   return `
     <section class="reference-screen">
+      ${renderSessionMiniBar(layout, activePosition)}
       <section class="panel reference-workbench" aria-labelledby="card-reference-title">
         <div class="section-head">
           <p class="eyebrow">Справочник</p>
@@ -167,17 +176,7 @@ function renderCardReferenceMode() {
           <input type="search" value="${escapeHtml(state.reference.query)}" placeholder="Найти карту или смысл..." data-reference-search>
         </label>
 
-        <div class="reference-filter" aria-label="Фильтр справочника">
-          ${cardReferenceFilters
-            .map(
-              (filter) => `
-                <button class="${state.reference.filter === filter.id ? "is-active" : ""}" type="button" data-reference-filter="${filter.id}">
-                  ${filter.label}
-                </button>
-              `,
-            )
-            .join("")}
-        </div>
+        ${renderReferenceFilters()}
 
         <p class="selection-line">Найдено: ${entries.length}. Карт: ${cardCount}. Старших: ${majorCount}.</p>
         ${renderReferenceNotice()}
@@ -209,6 +208,39 @@ function renderReferenceNotice() {
     <div class="reference-status" role="status">
       <span>Добавлено: ${notice.cardTitle} → ${notice.positionTitle}</span>
       <button type="button" data-reference-go-session>К раскладу</button>
+    </div>
+  `;
+}
+
+function renderReferenceFilters() {
+  return `
+    <div class="reference-filter-groups" aria-label="Фильтры справочника">
+      ${cardReferenceFilterGroups
+        .map(
+          (group) => `
+            <div class="reference-filter-group">
+              <span>${group.title}</span>
+              <div class="reference-filter">
+                ${group.options
+                  .map(
+                    (filter) => `
+                      <button
+                        class="${state.reference.filter === filter.id ? "is-active" : ""}"
+                        type="button"
+                        data-reference-filter="${filter.id}"
+                        aria-label="${filter.ariaLabel}"
+                        title="${filter.title}"
+                      >
+                        ${filter.label}
+                      </button>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          `,
+        )
+        .join("")}
     </div>
   `;
 }
@@ -273,7 +305,7 @@ function renderSessionMode() {
           ${renderSessionControls(layout)}
         </section>
 
-        ${renderSessionMiniBar(activePosition)}
+        ${renderSessionMiniBar(layout, activePosition)}
 
         <section class="panel spreads-panel" aria-labelledby="session-positions-title">
           <div class="section-head">
@@ -526,14 +558,41 @@ function renderInlineSessionPicker(
   `;
 }
 
-function renderSessionMiniBar(activePosition: SpreadLayout["positions"][number]) {
-  const selection = state.session.cardsByPosition[activePosition.id];
-  const cardName = selection ? cardLabel(selection.card) : "карта не выбрана";
+function renderSessionMiniBar(layout: SpreadLayout, activePosition: SpreadLayout["positions"][number]) {
+  const activeSelection = state.session.cardsByPosition[activePosition.id];
+  const activeCardName = activeSelection ? cardLabel(activeSelection.card) : "карта не выбрана";
+  const actionButton =
+    state.mode === "session"
+      ? `<button type="button" data-session-scroll-result>К чтению</button>`
+      : `<button type="button" data-mode="session">К раскладу</button>`;
 
   return `
     <div class="session-mini-bar" aria-label="Активный контекст расклада">
-      <span><strong>Активно:</strong> ${activePosition.title} · ${cardName}</span>
-      <button type="button" data-session-scroll-result>К чтению</button>
+      <div class="session-mini-head">
+        <span><strong>Активно:</strong> ${activePosition.title} · ${activeCardName}</span>
+        ${actionButton}
+      </div>
+      <div class="session-card-rail" aria-label="Карты в раскладе">
+        ${layout.positions
+          .map((position, index) => {
+            const selection = state.session.cardsByPosition[position.id];
+            const label = selection ? cardLabel(selection.card) : "выбрать";
+            const isActive = state.session.activePositionId === position.id;
+            return `
+              <button
+                class="session-card-chip ${isActive ? "is-active" : ""} ${selection ? "is-filled" : ""}"
+                type="button"
+                data-session-strip-position="${position.id}"
+                aria-label="${selection ? `Изменить карту в позиции ${position.title}` : `Выбрать карту для позиции ${position.title}`}"
+                title="${selection ? "Изменить карту" : "Выбрать карту"}"
+              >
+                <span>${index + 1}</span>
+                <strong>${label}</strong>
+              </button>
+            `;
+          })
+          .join("")}
+      </div>
     </div>
   `;
 }
@@ -626,19 +685,17 @@ function renderOpenCardsEssence(
 }
 
 function renderCardReferenceEntry(entry: CardReferenceEntry) {
-  const addAction = entry.selection
-    ? `<button class="reference-add-button" type="button" data-reference-add="${entry.id}" aria-label="Добавить карту ${entry.title} в текущий расклад" title="Добавить в расклад">+ В расклад</button>`
-    : "";
-
   return `
     <article class="reference-entry">
-      <div class="reference-entry-head">
-        <p class="eyebrow">${referenceKindLabel(entry.kind)}</p>
-        <h3>${entry.title}</h3>
+      <div class="reference-entry-top">
+        <div class="reference-entry-head">
+          <p class="eyebrow">${referenceKindLabel(entry.kind)}</p>
+          <h3>${entry.title}</h3>
+        </div>
+        ${entry.selection ? renderReferenceAddAction(entry) : ""}
       </div>
-      <p><strong>Суть:</strong> ${entry.shortMeaning}</p>
-      <p class="verb-line"><strong>Глаголы:</strong> ${entry.verbs.slice(0, 5).join(" · ")}</p>
-      ${addAction}
+      <p class="reference-short">${entry.shortMeaning}</p>
+      <p class="verb-line reference-verbs">${entry.verbs.slice(0, 3).join(" · ")}</p>
       <details class="compact-details">
         <summary>Подробнее</summary>
         <div class="details-stack">
@@ -657,6 +714,26 @@ function renderCardReferenceEntry(entry: CardReferenceEntry) {
         </div>
       </details>
     </article>
+  `;
+}
+
+function renderReferenceAddAction(entry: CardReferenceEntry) {
+  const positions = currentSessionLayout().positions;
+
+  return `
+    <div class="reference-add-action">
+      <button
+        class="reference-add-button"
+        type="button"
+        data-reference-add="${entry.id}"
+        aria-label="Добавить карту ${entry.title} в текущий расклад"
+        title="Добавить в расклад"
+      >＋</button>
+      <select data-reference-target="${entry.id}" aria-label="Позиция для карты ${entry.title}" title="Позиция в раскладе">
+        ${option("next", "Следующая", false)}
+        ${positions.map((position) => option(position.id, position.title, false)).join("")}
+      </select>
+    </div>
   `;
 }
 
@@ -941,6 +1018,21 @@ function wireSessionEvents() {
     });
   });
 
+  app.querySelectorAll<HTMLButtonElement>("button[data-session-strip-position]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const positionId = button.dataset.sessionStripPosition ?? state.session.activePositionId;
+      if (state.session.cardsByPosition[positionId]) {
+        state.session = editPosition(state.session, positionId);
+        syncSessionPickerFromPosition(positionId);
+      } else {
+        state.session = setActivePosition(state.session, positionId);
+      }
+      state.mode = "session";
+      pendingScrollPositionId = state.session.activePositionId;
+      render();
+    });
+  });
+
   app.querySelectorAll<HTMLButtonElement>("button[data-session-edit]").forEach((button) => {
     button.addEventListener("click", () => {
       const positionId = button.dataset.sessionEdit ?? state.session.activePositionId;
@@ -1020,7 +1112,9 @@ function wireReferenceEvents() {
 
   app.querySelectorAll<HTMLButtonElement>("button[data-reference-add]").forEach((button) => {
     button.addEventListener("click", () => {
-      addReferenceEntryToSession(button.dataset.referenceAdd);
+      const entryId = button.dataset.referenceAdd;
+      const target = app.querySelector<HTMLSelectElement>(`select[data-reference-target="${entryId}"]`)?.value;
+      addReferenceEntryToSession(entryId, target);
       render();
     });
   });
@@ -1034,14 +1128,15 @@ function wireReferenceEvents() {
   });
 }
 
-function addReferenceEntryToSession(entryId: string | undefined) {
+function addReferenceEntryToSession(entryId: string | undefined, targetValue = "next") {
   const entry = cardReferenceEntries.find((item) => item.id === entryId);
 
   if (!entry?.selection) {
     return;
   }
 
-  const targetPositionId = findNextAvailablePositionId(state.session);
+  const layout = currentSessionLayout();
+  const targetPositionId = targetValue === "next" ? findNextAvailablePositionId(state.session) : targetValue;
 
   if (!targetPositionId) {
     state.reference.notice = {
@@ -1051,15 +1146,33 @@ function addReferenceEntryToSession(entryId: string | undefined) {
     return;
   }
 
-  const targetPosition = currentSessionLayout().positions.find((position) => position.id === targetPositionId);
-  state.session = selectCardForAvailablePosition(state.session, {
+  const targetPosition = layout.positions.find((position) => position.id === targetPositionId);
+
+  if (!targetPosition) {
+    return;
+  }
+
+  if (state.session.cardsByPosition[targetPosition.id]) {
+    state.reference.notice = {
+      type: "warning",
+      text: "Позиция уже заполнена. Измените её в раскладе или очистите позицию.",
+    };
+    return;
+  }
+
+  const selection = {
     ...entry.selection,
-    orientation: "upright",
-  });
+    orientation: "upright" as const,
+  };
+
+  state.session =
+    targetValue === "next"
+      ? selectCardForAvailablePosition(state.session, selection)
+      : selectCardForPosition(state.session, targetPosition.id, selection);
   state.reference.notice = {
     type: "success",
     cardTitle: entry.title,
-    positionTitle: targetPosition?.title ?? targetPositionId,
+    positionTitle: targetPosition.title,
   };
 }
 

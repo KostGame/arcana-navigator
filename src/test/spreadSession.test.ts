@@ -11,6 +11,7 @@ import {
   findNextAvailablePositionId,
   selectCardForAvailablePosition,
   selectCardForActivePosition,
+  selectCardForPosition,
   setActivePosition,
 } from "../lib/spreadSession";
 import type { PositionCardSelection } from "../types";
@@ -91,6 +92,21 @@ describe("spread session state", () => {
     expect(updated.cardsByPosition["three-situation"]).toEqual(tenCups);
     expect(updated.cardsByPosition["three-influence"]).toEqual(moon);
     expect(updated.activePositionId).toBe("three-direction");
+  });
+
+  it("adds a reference card to a specific empty position", () => {
+    const session = selectCardForPosition(createSpreadSession("three-advice"), "three-direction", moon);
+
+    expect(session.cardsByPosition["three-direction"]).toEqual(moon);
+    expect(session.activePositionId).toBe("three-advice");
+  });
+
+  it("does not overwrite a specific filled position from reference", () => {
+    const withCard = selectCardForPosition(createSpreadSession("three-advice"), "three-direction", tenCups);
+    const blocked = selectCardForPosition(withCard, "three-direction", moon);
+
+    expect(blocked.cardsByPosition["three-direction"]).toEqual(tenCups);
+    expect(blocked.cardsByPosition["three-direction"]).not.toEqual(moon);
   });
 
   it("does not overwrite existing cards when every position is filled from reference", () => {
