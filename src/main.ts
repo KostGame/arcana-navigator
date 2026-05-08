@@ -18,6 +18,8 @@ import {
   createSpreadSession,
   editPosition,
   hasSessionCards,
+  findNextAvailablePositionId,
+  selectCardForAvailablePosition,
   selectCardForActivePosition,
   setActivePosition,
 } from "./lib/spreadSession";
@@ -41,6 +43,9 @@ type AppMode = "quick" | "session" | "reference";
 type PickerCommitMode = "none" | "card" | "orientation";
 
 type ReferenceFilter = (typeof cardReferenceFilters)[number]["id"];
+type ReferenceNotice =
+  | { type: "success"; cardTitle: string; positionTitle: string }
+  | { type: "warning"; text: string };
 
 interface CardPickerState {
   cardKind: CardKind;
@@ -65,6 +70,7 @@ interface AppState {
   reference: {
     filter: ReferenceFilter;
     query: string;
+    notice?: ReferenceNotice;
   };
 }
 
@@ -174,12 +180,36 @@ function renderCardReferenceMode() {
         </div>
 
         <p class="selection-line">Найдено: ${entries.length}. Карт: ${cardCount}. Старших: ${majorCount}.</p>
+        ${renderReferenceNotice()}
 
         <div class="reference-results">
           ${entries.length > 0 ? entries.map(renderCardReferenceEntry).join("") : `<div class="empty-note">Ничего не найдено. Попробуйте другой запрос.</div>`}
         </div>
       </section>
     </section>
+  `;
+}
+
+function renderReferenceNotice() {
+  const notice = state.reference.notice;
+
+  if (!notice) {
+    return "";
+  }
+
+  if (notice.type === "warning") {
+    return `
+      <div class="reference-status is-warning" role="status">
+        <span>${notice.text}</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="reference-status" role="status">
+      <span>Добавлено: ${notice.cardTitle} → ${notice.positionTitle}</span>
+      <button type="button" data-reference-go-session>К раскладу</button>
+    </div>
   `;
 }
 
@@ -596,6 +626,10 @@ function renderOpenCardsEssence(
 }
 
 function renderCardReferenceEntry(entry: CardReferenceEntry) {
+  const addAction = entry.selection
+    ? `<button class="reference-add-button" type="button" data-reference-add="${entry.id}" aria-label="Добавить карту ${entry.title} в текущий расклад" title="Добавить в расклад">+ В расклад</button>`
+    : "";
+
   return `
     <article class="reference-entry">
       <div class="reference-entry-head">
@@ -604,6 +638,7 @@ function renderCardReferenceEntry(entry: CardReferenceEntry) {
       </div>
       <p><strong>Суть:</strong> ${entry.shortMeaning}</p>
       <p class="verb-line"><strong>Глаголы:</strong> ${entry.verbs.slice(0, 5).join(" · ")}</p>
+      ${addAction}
       <details class="compact-details">
         <summary>Подробнее</summary>
         <div class="details-stack">
@@ -982,6 +1017,50 @@ function wireReferenceEvents() {
       render();
     });
   });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-reference-add]").forEach((button) => {
+    button.addEventListener("click", () => {
+      addReferenceEntryToSession(button.dataset.referenceAdd);
+      render();
+    });
+  });
+
+  app.querySelectorAll<HTMLButtonElement>("button[data-reference-go-session]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.mode = "session";
+      pendingScrollPositionId = state.session.lastUpdatedPositionId ?? state.session.activePositionId;
+      render();
+    });
+  });
+}
+
+function addReferenceEntryToSession(entryId: string | undefined) {
+  const entry = cardReferenceEntries.find((item) => item.id === entryId);
+
+  if (!entry?.selection) {
+    return;
+  }
+
+  const targetPositionId = findNextAvailablePositionId(state.session);
+
+  if (!targetPositionId) {
+    state.reference.notice = {
+      type: "warning",
+      text: "Все позиции заполнены. Очистите позицию или измените карту в раскладе.",
+    };
+    return;
+  }
+
+  const targetPosition = currentSessionLayout().positions.find((position) => position.id === targetPositionId);
+  state.session = selectCardForAvailablePosition(state.session, {
+    ...entry.selection,
+    orientation: "upright",
+  });
+  state.reference.notice = {
+    type: "success",
+    cardTitle: entry.title,
+    positionTitle: targetPosition?.title ?? targetPositionId,
+  };
 }
 
 function commitSessionPicker(mode: PickerCommitMode) {

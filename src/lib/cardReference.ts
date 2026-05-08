@@ -2,7 +2,7 @@ import { courtCards } from "../data/court";
 import { majors } from "../data/majors";
 import { ranks } from "../data/ranks";
 import { suits } from "../data/suits";
-import type { CourtMeaning, MajorArcana, RankMeaning, SuitMeaning } from "../types";
+import type { CourtMeaning, MajorArcana, PositionCardSelection, RankMeaning, SuitMeaning } from "../types";
 
 export type CardReferenceFilter = "all" | "major" | "wands" | "cups" | "swords" | "pentacles" | "court";
 export type CardReferenceKind = "major" | "minor" | "court" | "suit" | "rank";
@@ -23,6 +23,7 @@ export interface CardReferenceEntry {
   build?: string;
   archetype?: string;
   stage?: string;
+  selection?: Pick<PositionCardSelection, "cardKind" | "card">;
 }
 
 const minorShortMeanings: Partial<Record<string, string>> = {
@@ -84,6 +85,10 @@ function majorEntry(major: MajorArcana): CardReferenceEntry {
     attention: major.energy,
     avoid: major.obstacle,
     archetype: major.archetype,
+    selection: {
+      cardKind: "major",
+      card: { type: "major", majorId: major.id },
+    },
   };
 }
 
@@ -104,6 +109,10 @@ function minorEntry(suit: SuitMeaning, rank: RankMeaning): CardReferenceEntry {
     attention: rank.energy,
     avoid: rank.obstacle,
     build: `Масть: ${suit.shortMeaning}. Достоинство: ${rank.shortMeaning}.`,
+    selection: {
+      cardKind: "minor",
+      card: { type: "minor", suitId: suit.id, rankId: rank.id },
+    },
   };
 }
 
@@ -124,6 +133,10 @@ function courtEntry(suit: SuitMeaning, court: CourtMeaning): CardReferenceEntry 
     attention: court.relationships,
     avoid: "не сводить придворную карту только к конкретному человеку; это может быть роль, стиль поведения или качество",
     build: `Масть: ${suit.shortMeaning}. Роль: ${court.role}.`,
+    selection: {
+      cardKind: "court",
+      card: { type: "court", suitId: suit.id, courtId: court.id },
+    },
   };
 }
 

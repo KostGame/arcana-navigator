@@ -6,9 +6,14 @@ describe("card reference", () => {
 
   it("builds all 22 major arcana", () => {
     const majorEntries = entries.filter((entry) => entry.kind === "major");
+    const moon = entries.find((entry) => entry.id === "major-moon");
 
     expect(majorEntries).toHaveLength(22);
     expect(majorEntries.some((entry) => entry.title.includes("Луна"))).toBe(true);
+    expect(moon?.selection).toEqual({
+      cardKind: "major",
+      card: { type: "major", majorId: "moon" },
+    });
   });
 
   it("builds 8 Cups with a structured short meaning", () => {
@@ -17,6 +22,10 @@ describe("card reference", () => {
     expect(eightCups?.title).toBe("8 Кубков");
     expect(eightCups?.shortMeaning).toContain("уход");
     expect(eightCups?.shortMeaning).toContain("не наполняет");
+    expect(eightCups?.selection).toEqual({
+      cardKind: "minor",
+      card: { type: "minor", suitId: "cups", rankId: "eight" },
+    });
   });
 
   it("builds Page of Pentacles with a structured short meaning", () => {
@@ -25,6 +34,18 @@ describe("card reference", () => {
     expect(pagePentacles?.title).toBe("Паж Пентаклей");
     expect(pagePentacles?.shortMeaning).toContain("практический шаг");
     expect(pagePentacles?.shortMeaning).toContain("обучение");
+    expect(pagePentacles?.selection).toEqual({
+      cardKind: "court",
+      card: { type: "court", suitId: "pentacles", courtId: "page" },
+    });
+  });
+
+  it("does not expose spread selections for suit and rank helper entries", () => {
+    const cups = entries.find((entry) => entry.id === "suit-cups");
+    const eight = entries.find((entry) => entry.id === "rank-eight");
+
+    expect(cups?.selection).toBeUndefined();
+    expect(eight?.selection).toBeUndefined();
   });
 
   it("filters and searches expected cards", () => {
